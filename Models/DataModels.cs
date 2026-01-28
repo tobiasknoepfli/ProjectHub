@@ -60,9 +60,38 @@ namespace ProjectHub.App.Models
         public bool IsPast => !IsActive;
     }
 
-    [Table("issues")]
-    public class Issue : BaseModel
+    [Table("collaborators")]
+    public class Collaborator : BaseModel
     {
+        [PrimaryKey("id", false)]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [Column("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [Column("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Column("avatar_url")]
+        public string? AvatarUrl { get; set; }
+
+        public override string ToString() => Name;
+    }
+
+    [Table("issues")]
+    public class Issue : BaseModel, System.ComponentModel.INotifyPropertyChanged
+    {
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+
+        private string _status = "Open";
+        private string _priority = "Medium";
+        private string _responsibleUsers = string.Empty;
+        private string _description = string.Empty;
+        private string _longDescription = string.Empty;
+        private Guid? _sprintId;
+
         [PrimaryKey("id", false)]
         public Guid Id { get; set; } = Guid.NewGuid();
 
@@ -70,7 +99,7 @@ namespace ProjectHub.App.Models
         public Guid ProjectId { get; set; }
 
         [Column("sprint_id")]
-        public Guid? SprintId { get; set; }
+        public Guid? SprintId { get => _sprintId; set { _sprintId = value; OnPropertyChanged(); } }
 
         [Column("program_component")]
         public string ProgramComponent { get; set; } = string.Empty;
@@ -79,7 +108,10 @@ namespace ProjectHub.App.Models
         public string SubComponents { get; set; } = string.Empty; // Semicolon separated
 
         [Column("description")]
-        public string Description { get; set; } = string.Empty;
+        public string Description { get => _description; set { _description = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedTitle)); } }
+
+        [Column("long_description")]
+        public string LongDescription { get => _longDescription; set { _longDescription = value; OnPropertyChanged(); } }
 
         [Column("type")]
         public string Type { get; set; } = "Bug"; // Bug, Feature, Idea, Story
@@ -88,13 +120,33 @@ namespace ProjectHub.App.Models
         public string Category { get; set; } = "Backlog"; // Backlog, Pipeline, Hub
 
         [Column("status")]
-        public string Status { get; set; } = "Open"; // Open, In Progress, In Testing, Finished
+        public string Status { get => _status; set { _status = value; OnPropertyChanged(); } }
 
         [Column("priority")]
-        public int Priority { get; set; } = 1;
+        public string Priority { get => _priority; set { _priority = value; OnPropertyChanged(); } }
+
+        [Column("responsible_users")]
+        public string ResponsibleUsers { get => _responsibleUsers; set { _responsibleUsers = value; OnPropertyChanged(); } }
+
+        [Column("parent_issue_id")]
+        public Guid? ParentIssueId { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // UI support for hierarchy
+        private System.Collections.ObjectModel.ObservableCollection<Issue> _children = new();
+        public System.Collections.ObjectModel.ObservableCollection<Issue> Children 
+        { 
+            get => _children; 
+            set { _children = value; OnPropertyChanged(); } 
+        }
+
+        private string? _parentTitle;
+        public string? ParentTitle { get => _parentTitle; set { _parentTitle = value; OnPropertyChanged(); } }
+
+        private string? _sprintTag;
+        public string? SprintTag { get => _sprintTag; set { _sprintTag = value; OnPropertyChanged(); } }
 
         // Formatted title: Program / Sub1 / Sub2 : Description
         public string FormattedTitle
@@ -103,7 +155,12 @@ namespace ProjectHub.App.Models
             {
                 var subs = SubComponents.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                 var subPart = subs.Length > 0 ? " / " + string.Join(" / ", subs) : "";
-                return $"{ProgramComponent}{subPart} : {Description}";
+                var componentPart = string.IsNullOrWhiteSpace(ProgramComponent) ? "" : ProgramComponent;
+                
+                if (string.IsNullOrWhiteSpace(componentPart) && string.IsNullOrWhiteSpace(subPart))
+                    return Description;
+
+                return $"{componentPart}{subPart} : {Description}";
             }
         }
 
@@ -117,6 +174,18 @@ namespace ProjectHub.App.Models
                 return $"{(int)age.TotalMinutes}m up";
             }
         }
+
+        public bool CanBeArchived
+        {
+            get
+            {
+                if (Type != "Idea" && Type != "Story") return false;
+                if (Children.Count == 0) return true;
+                return Children.All(c => c.Status == "Finished");
+            }
+        }
+
+        public void RefreshArchivability() => OnPropertyChanged(nameof(CanBeArchived));
     }
 
     [Table("issue_logs")]

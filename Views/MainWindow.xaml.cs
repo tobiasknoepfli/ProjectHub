@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using System.Globalization;
 using ProjectHub.App.ViewModels;
 using ProjectHub.App.Services;
 
@@ -104,6 +105,59 @@ namespace ProjectHub.App.Views
                 return b ? target : 0.0;
             }
             return 0.0;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class BooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool b) return b ? Visibility.Visible : Visibility.Collapsed;
+            return Visibility.Collapsed;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class BooleanToVisibilityInverseConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool b) return b ? Visibility.Collapsed : Visibility.Visible;
+            return Visibility.Visible;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class EqualityToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null) return Visibility.Collapsed;
+            
+            string val = value.ToString() ?? "";
+            string param = parameter.ToString() ?? "";
+
+            bool isInverse = param.StartsWith("NOT:");
+            if (isInverse) param = param.Substring(4);
+
+            bool isEqual = val == param;
+            bool result = isInverse ? !isEqual : isEqual;
+
+            return result ? Visibility.Visible : Visibility.Collapsed;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class MultiplierConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is double d && parameter is string p && double.TryParse(p, NumberStyles.Any, CultureInfo.InvariantCulture, out double m))
+            {
+                return d * m;
+            }
+            return value;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }

@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:ProjectHub.App.Views"
         xmlns:vm="clr-namespace:ProjectHub.App.ViewModels"
         mc:Ignorable="d"
-        Title="ProjectLink" Height="900" Width="1400"
+        Title="Sleipnir" Height="900" Width="1400"
+        Icon="/Resources/sleipnir.ico"
         Background="{StaticResource BackgroundBrush}"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -23,59 +24,379 @@
         <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <local:StringToVisibilityInverseConverter x:Key="StringToVisibilityInverseConverter"/>
         <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <local:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter"/>
+        <local:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
+        <local:MultiplierConverter x:Key="MultiplierConverter"/>
 
         <DataTemplate x:Key="IssueCardTemplate">
-            <Border Style="{StaticResource ModernCard}" Margin="0,0,0,12">
-                <StackPanel>
-                    <Grid Margin="0,0,0,8">
-                        <Border Background="#2A2F45" Padding="8,3" CornerRadius="4" HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="[BUG] " FontSize="10" Foreground="{StaticResource AccentBrush}" 
-                                           Visibility="{Binding Type, ConverterParameter=Bug, Converter={StaticResource StringToVisibilityConverter}}"/>
-                                <TextBlock Text="[STORY] " FontSize="10" Foreground="{StaticResource AccentBrush}" 
-                                           Visibility="{Binding Type, ConverterParameter=Story, Converter={StaticResource StringToVisibilityConverter}}"/>
-                                <TextBlock Text="[ITEM] " FontSize="10" Foreground="{StaticResource AccentBrush}" 
-                                           Visibility="{Binding Type, ConverterParameter=Bug|Story, Converter={StaticResource StringToVisibilityInverseConverter}}"/>
-                                
-                                <TextBlock Text="{Binding Type}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                             <Button Style="{StaticResource SidebarButton}"
-                                    Command="{Binding DataContext.AssignToSprintCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                    CommandParameter="{Binding}"
-                                    Visibility="{Binding SprintId, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"
-                                    Margin="0,0,5,0">
-                                <Border Background="#3D7C4DFF" Padding="4,2" CornerRadius="4">
-                                    <TextBlock Text="PLAN" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
-                                </Border>
-                            </Button>
-
-                            <Button Style="{StaticResource SidebarButton}"
-                                    Command="{Binding DataContext.ShowLogsCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                    CommandParameter="{Binding}" WindowChrome.IsHitTestVisibleInChrome="True">
-                                 <TextBlock Text="LOG" FontSize="10" ToolTip="Show Timeline / Logs" Foreground="{StaticResource TextMutedBrush}"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-
-                    <TextBlock Text="{Binding FormattedTitle}" FontWeight="SemiBold" Margin="0,0,0,8" 
-                               TextWrapping="Wrap" FontSize="13" LineHeight="17"/>
-                    
-                    <Grid>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Background="#1A1D2E" Padding="5,2" CornerRadius="4">
-                                <TextBlock Text="{Binding AgeString}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+            <Border Style="{StaticResource ModernCard}" Margin="0,0,0,12" Background="#1C1F30">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                  Command="{Binding DataContext.OpenIssueDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                  CommandParameter="{Binding}"/>
+                </Border.InputBindings>
+                <Grid>
+                    <!-- Standard View -->
+                    <StackPanel Visibility="{Binding DataContext.IsCompactView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityInverseConverter}}">
+                        <Grid Margin="0,0,0,8">
+                            <Border Background="#2A2F45" Padding="8,3" CornerRadius="4" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="{Binding Type}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Setter Property="Text" Value="📋"/>
+                                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Type}" Value="Bug">
+                                                        <Setter Property="Text" Value="🐞"/>
+                                                        <Setter Property="Foreground" Value="#FF5252"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Type}" Value="Story">
+                                                        <Setter Property="Text" Value="📘"/>
+                                                        <Setter Property="Foreground" Value="#4D7CFF"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Type}" Value="Feature">
+                                                        <Setter Property="Text" Value="✨"/>
+                                                        <Setter Property="Foreground" Value="#FFD740"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Type}" Value="Idea">
+                                                        <Setter Property="Text" Value="💡"/>
+                                                        <Setter Property="Foreground" Value="#B388FF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="{StaticResource TextMutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Border>
+                            
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                 <Button Command="{Binding DataContext.AssignToSprintCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,5,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding SprintId, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}" Value="Visible"/>
+                                                        <Condition Binding="{Binding Type}" Value="Bug"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Border Background="#3D7C4DFF" Padding="4,2" CornerRadius="4">
+                                        <TextBlock Text="PLAN" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+                                    </Border>
+                                </Button>
+
+                                <Button Command="{Binding DataContext.ArchiveIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Margin="5,0,0,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Setter Property="Opacity" Value="0.5"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Type}" Value="Idea">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Type}" Value="Story">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding CanBeArchived}" Value="True">
+                                                    <Setter Property="Opacity" Value="1.0"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Border Background="#2A2F45" Padding="4,2" CornerRadius="4">
+                                        <TextBlock Text="📁 ARCHIVE" FontSize="9" Foreground="#8B949E" FontWeight="Bold"/>
+                                    </Border>
+                                </Button>
+
+                                <Button Command="{Binding DataContext.RestoreIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Margin="5,0,0,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Archived">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Border Background="#3D7C4DFF" Padding="4,2" CornerRadius="4">
+                                        <TextBlock Text="↺ RESTORE" FontSize="9" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+                                    </Border>
+                                </Button>
+                            </StackPanel>
+                            
+                            <!-- Parent Idea Tag for Stories (Top Right) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0"
+                                        Visibility="{Binding ParentTitle, Converter={StaticResource NullToVisibilityConverter}}">
+                                <Border Background="#1A1D2E" BorderBrush="#3D7C4DFF" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="💡 " FontSize="10" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ParentTitle}" FontSize="10" Foreground="#E0E0E0" MaxWidth="100" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        <Button Command="{Binding DataContext.UnlinkIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource SidebarButton}" Padding="4,0" Margin="5,0,0,0">
+                                            <TextBlock Text="✕" FontSize="8" Foreground="#FF5252" FontWeight="Bold"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="{Binding Description}" FontWeight="SemiBold" Margin="0,0,0,8" 
+                                   TextWrapping="Wrap" FontSize="13" LineHeight="17"/>
+                        
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Background="#1A1D2E" Padding="5,2" CornerRadius="4" Margin="0,0,5,0" ToolTip="{Binding Priority}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Type}" Value="Idea">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Type}" Value="Story">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontSize="12" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="⏺"/>
+                                                <Setter Property="Foreground" Value="#FFD740"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Critical">
+                                                        <Setter Property="Text" Value="⚡"/>
+                                                        <Setter Property="Foreground" Value="#FF1744"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Very High">
+                                                        <Setter Property="Text" Value="⏫"/>
+                                                        <Setter Property="Foreground" Value="#FF5252"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="High">
+                                                        <Setter Property="Text" Value="🔼"/>
+                                                        <Setter Property="Foreground" Value="#FFAB40"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Medium">
+                                                        <Setter Property="Text" Value="⏺"/>
+                                                        <Setter Property="Foreground" Value="#FFD740"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Low">
+                                                        <Setter Property="Text" Value="🔽"/>
+                                                        <Setter Property="Foreground" Value="#69F0AE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Very Low">
+                                                        <Setter Property="Text" Value="⏬"/>
+                                                        <Setter Property="Foreground" Value="#40C4FF"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Priority}" Value="Nice to Have">
+                                                        <Setter Property="Text" Value="💡"/>
+                                                        <Setter Property="Foreground" Value="#7C4DFF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                                <Border Background="#1A1D2E" Padding="5,2" CornerRadius="4">
+                                    <TextBlock Text="{Binding AgeString}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                </Border>
+                            </StackPanel>
+                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                 <TextBlock Text="{Binding ResponsibleUsers}" FontSize="10" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding Type}" Value="Idea">
+                                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                                 </DataTrigger>
+                                                 <DataTrigger Binding="{Binding Type}" Value="Story">
+                                                     <Setter Property="Visibility" Value="Collapsed"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                 </TextBlock>
+                                 <Border Background="#337C4DFF" Padding="5,2" CornerRadius="4" Visibility="{Binding SprintId, Converter={StaticResource NullToVisibilityConverter}}">
+                                    <TextBlock Text="Sprint" FontSize="10" Foreground="{StaticResource AccentBrush}"/>
+                                 </Border>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Added for Hierarchy -->
+                        <StackPanel Margin="0,15,0,0">
+                            <!-- Show children for Ideas (Stories) -->
+                            <StackPanel Visibility="{Binding Category, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Hub}">
+                                <ItemsControl ItemsSource="{Binding Children}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#121420" Margin="0,0,0,4" Padding="10,6" CornerRadius="4">
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                                                  Command="{Binding DataContext.JumpToIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                  CommandParameter="{Binding}"/>
+                                                </Border.InputBindings>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#E0E0E0" TextWrapping="Wrap"/>
+                                                    <Border Grid.Column="1" Background="#2A2F45" CornerRadius="4" Padding="5,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding SprintTag}" FontSize="8" Foreground="#8B949E" FontWeight="Bold"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Command="{Binding DataContext.AddStoryCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource SidebarButton}" HorizontalAlignment="Left" Margin="0,5,0,0">
+                                    <TextBlock Text="+ Add Story" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Show children for Stories (Issues) -->
+                            <StackPanel Visibility="{Binding Category, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Pipeline}">
+                                <!-- Strategic section removed (now in header) -->
+
+                                <ItemsControl ItemsSource="{Binding Children}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#121420" Margin="0,0,0,4" Padding="10,6" CornerRadius="4">
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftDoubleClick" 
+                                                                  Command="{Binding DataContext.JumpToIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                  CommandParameter="{Binding}"/>
+                                                </Border.InputBindings>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#E0E0E0" TextWrapping="Wrap"/>
+                                                    <Border Grid.Column="1" Background="#2A2F45" CornerRadius="4" Padding="5,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Status}" FontSize="8" Foreground="#8B949E" FontWeight="Bold"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Command="{Binding DataContext.AddChildIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource SidebarButton}" HorizontalAlignment="Left" Margin="0,5,0,0">
+                                    <TextBlock Text="+ Add Issue" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                             <Border Background="#337C4DFF" Padding="5,2" CornerRadius="4" Visibility="{Binding SprintId, Converter={StaticResource NullToVisibilityConverter}}">
-                                <TextBlock Text="Sprint" FontSize="10" Foreground="{StaticResource AccentBrush}"/>
-                             </Border>
+
+                        <!-- Timestamp -->
+                        <TextBlock Text="{Binding CreatedAt, StringFormat='{}Idea from {0:dd.MM.yyyy HH:mm}'}" 
+                                   FontSize="9" Foreground="{StaticResource TextMutedBrush}" Margin="0,10,0,0" Opacity="0.6"
+                                   Visibility="{Binding Category, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Hub}"/>
+                    </StackPanel>
+
+                    <!-- Compact View (Two-Liner) -->
+                    <StackPanel Visibility="{Binding DataContext.IsCompactView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" ToolTip="{Binding Type}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="Text" Value="📋"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Type}" Value="Bug">
+                                                    <Setter Property="Text" Value="🐞"/>
+                                                    <Setter Property="Foreground" Value="#FF5252"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Type}" Value="Story">
+                                                    <Setter Property="Text" Value="📘"/>
+                                                    <Setter Property="Foreground" Value="#4D7CFF"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Type}" Value="Feature">
+                                                    <Setter Property="Text" Value="✨"/>
+                                                    <Setter Property="Foreground" Value="#FFD740"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Type}" Value="Idea">
+                                                    <Setter Property="Text" Value="💡"/>
+                                                    <Setter Property="Foreground" Value="#B388FF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding FormattedTitle}" FontWeight="Medium" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="18,4,0,0">
+                             <TextBlock FontSize="12" Margin="0,0,15,0" VerticalAlignment="Center" ToolTip="{Binding Priority}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="⏺"/>
+                                        <Setter Property="Foreground" Value="#FFD740"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Critical">
+                                                <Setter Property="Text" Value="⚡"/>
+                                                <Setter Property="Foreground" Value="#FF1744"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Very High">
+                                                <Setter Property="Text" Value="⏫"/>
+                                                <Setter Property="Foreground" Value="#FF5252"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="High">
+                                                <Setter Property="Text" Value="🔼"/>
+                                                <Setter Property="Foreground" Value="#FFAB40"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Medium">
+                                                <Setter Property="Text" Value="⏺"/>
+                                                <Setter Property="Foreground" Value="#FFD740"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Low">
+                                                <Setter Property="Text" Value="🔽"/>
+                                                <Setter Property="Foreground" Value="#69F0AE"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Very Low">
+                                                <Setter Property="Text" Value="⏬"/>
+                                                <Setter Property="Foreground" Value="#40C4FF"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Priority}" Value="Nice to Have">
+                                                <Setter Property="Text" Value="💡"/>
+                                                <Setter Property="Foreground" Value="#7C4DFF"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                             </TextBlock>
+                             <TextBlock Text="{Binding AgeString}" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,15,0"/>
+                             <TextBlock Text="{Binding ResponsibleUsers}" FontSize="10" Foreground="{StaticResource TextMutedBrush}" Opacity="0.7"/>
                         </StackPanel>
-                    </Grid>
-                </StackPanel>
+                    </StackPanel>
+                </Grid>
             </Border>
         </DataTemplate>
     </Window.Resources>
@@ -105,8 +426,8 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
-                    <TextBlock Text="PH" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource AccentBrush}"/>
-                    <TextBlock Text="ProjectLink | Modern Issue Tracker" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                    <Image Source="/Resources/sleipnir_logo.png" Height="20" Width="20" Margin="0,0,8,0"/>
+                    <TextBlock Text="Sleipnir | Advanced Issue Tracking" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
@@ -135,8 +456,8 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,30">
-                        <TextBlock Text="PL" FontSize="24" Margin="0,0,10,0" Foreground="{StaticResource AccentBrush}"/>
-                        <TextBlock Text="ProjectLink" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Image Source="/Resources/sleipnir_logo.png" Height="40" Width="40" Margin="0,0,10,0"/>
+                        <TextBlock Text="Sleipnir" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Project Switcher Card -->
@@ -169,44 +490,50 @@
                         </Grid>
                     </Button>
 
-                    <TextBlock Grid.Row="2" Text="SPRINTS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,5"/>
+                    <!-- Main Navigation Scroll Area -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="PLANNING" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,10" Opacity="0.6"/>
+                            
+                            <Button Style="{StaticResource SidebarButton}" Padding="8,10" 
+                                    Click="AllIssues_Click" Margin="0,0,0,20">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📋" Margin="0,0,12,0" FontSize="16"/>
+                                    <TextBlock Text="Unplanned Issues" FontWeight="Medium" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
 
-                    <StackPanel Grid.Row="3" Margin="0,20,0,10">
-                        <TextBlock Text="PLANNING" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,10"/>
-                        
-                        <Button Style="{StaticResource SidebarButton}" Padding="5" 
-                                Click="AllIssues_Click" Margin="0,0,0,10">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋" Margin="0,0,10,0"/>
-                                <TextBlock Text="All / Unplanned" FontWeight="Medium"/>
-                            </StackPanel>
-                        </Button>
-
-                        <TextBlock Text="SPRINTS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,5"/>
-                        <ListBox ItemsSource="{Binding Sprints}" 
-                                SelectedItem="{Binding SelectedSprint}"
-                                Background="Transparent" BorderThickness="0">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="5,2" Opacity="{Binding IsCurrent, Converter={StaticResource BooleanToOpacityConverter}, FallbackValue=1}">
-                                        <TextBlock Text="{Binding Name}" FontWeight="Medium"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding StartDate, StringFormat='{}{0:dd.MM}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <TextBlock Text=" - " FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <TextBlock Text="{Binding EndDate, StringFormat='{}{0:dd.MM}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
-                                            <Border Margin="10,0,0,0" Background="#3300C853" CornerRadius="4" Visibility="{Binding IsCurrent, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                <TextBlock Text="ACTIVE" FontSize="8" Padding="3,1" Foreground="#00C853" FontWeight="Bold"/>
-                                            </Border>
+                            <TextBlock Text="SPRINTS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,10" Opacity="0.6"/>
+                            
+                            <ListBox ItemsSource="{Binding Sprints}" 
+                                    SelectedItem="{Binding SelectedSprint}"
+                                    Background="Transparent" BorderThickness="0" Margin="0,0,0,20">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="5,2" Opacity="{Binding IsCurrent, Converter={StaticResource BooleanToOpacityConverter}, FallbackValue=1}">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Medium"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding StartDate, StringFormat='{}{0:dd.MM}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text=" - " FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <TextBlock Text="{Binding EndDate, StringFormat='{}{0:dd.MM}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                                <Border Margin="10,0,0,0" Background="#3300C853" CornerRadius="4" Visibility="{Binding IsCurrent, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="ACTIVE" FontSize="8" Padding="3,1" Foreground="#00C853" FontWeight="Bold"/>
+                                                </Border>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Button Command="{Binding OpenSprintModalCommand}" Style="{StaticResource SidebarButton}" Margin="0,5,0,0">
-                             <TextBlock Text="+ Add Sprint" FontSize="11"/>
-                        </Button>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
-                        <Button Command="{Binding ToggleArchiveCommand}" Style="{StaticResource SidebarButton}" Margin="0,15,0,0">
+                            <Button Command="{Binding OpenSprintModalCommand}" Style="{StaticResource SidebarButton}" Margin="0,5,0,0" Padding="8,5">
+                                 <TextBlock Text="+ Add Sprint" FontSize="11"/>
+                            </Button>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Bottom Actions (Archive) -->
+                    <StackPanel Grid.Row="3" Margin="0,20,0,0">
+                        <Button Command="{Binding ToggleArchiveCommand}" Style="{StaticResource SidebarButton}" Padding="8,5">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📁" Margin="0,0,10,0"/>
                                 <TextBlock Text="Sprint Archive" FontWeight="Medium"/>
@@ -228,13 +555,6 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </StackPanel>
-
-                    <Button Grid.Row="4" Command="{Binding CreateProjectCommand}" Style="{StaticResource SidebarButton}" Margin="0,10,0,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="+" Margin="0,0,10,0"/>
-                            <TextBlock Text="Add New Project"/>
-                        </StackPanel>
-                    </Button>
                 </Grid>
             </Border>
 
@@ -249,24 +569,26 @@
                 <Grid Margin="0,0,0,20">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding SelectedProject.Name, FallbackValue='Select a Project'}" FontSize="28" FontWeight="Bold"/>
-                            <Button Command="{Binding EditProjectModalCommand}" Style="{StaticResource WindowControlButton}" Width="30" Height="30" Margin="10,0,0,0">
+                            <TextBlock Text="{Binding SelectedProject.Name, FallbackValue='Select Project'}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"/>
+                            <Button Command="{Binding EditProjectModalCommand}" Style="{StaticResource WindowControlButton}" Width="20" Height="20" Margin="5,0,0,0" Padding="0">
+                                <TextBlock Text="✎" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                            </Button>
+                            <TextBlock Text=" • " FontSize="12" Foreground="{StaticResource BorderBrush}" Margin="5,0"/>
+                            <TextBlock Text="{Binding SelectedProject.Description, FallbackValue='...'}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="{Binding CurrentViewTitle}" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                            <Button Command="{Binding EditSprintModalCommand}" Style="{StaticResource WindowControlButton}" Width="25" Height="25" Margin="10,5,0,0" Padding="0"
+                                    Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}">
                                 <TextBlock Text="✎" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding SelectedSprint.Name, FallbackValue='All Issues'}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
-                            <Button Command="{Binding EditSprintModalCommand}" Style="{StaticResource WindowControlButton}" Width="25" Height="25" Margin="5,-2,5,0" Padding="0">
-                                <TextBlock Text="✎" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
-                            </Button>
-                            <TextBlock Text=" • " Foreground="{StaticResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding SelectedProject.Description, FallbackValue='...'}" Foreground="{StaticResource TextMutedBrush}"/>
                         </StackPanel>
                     </StackPanel>
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                          <Button Command="{Binding CompleteSprintCommand}" Style="{StaticResource AccentButton}" Margin="0,0,15,0"
-                                Visibility="{Binding SelectedSprint.CanBeCompleted, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                Visibility="{Binding CanCompleteSelectedSprint, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="Complete Sprint √" Foreground="White" FontWeight="Bold"/>
                         </Button>
 
@@ -276,6 +598,16 @@
                                 <TextBlock Text="Search items..." Foreground="{StaticResource TextMutedBrush}"/>
                             </StackPanel>
                         </Border>
+
+                        <Button Command="{Binding ToggleViewModeCommand}" Style="{StaticResource SidebarButton}" Padding="10,5">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="☰" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" 
+                                           Visibility="{Binding IsCompactView, Converter={StaticResource BooleanToVisibilityInverseConverter}}"/>
+                                <TextBlock Text="≡" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center" 
+                                           Visibility="{Binding IsCompactView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <TextBlock Text="View Mode" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Grid>
 
@@ -290,7 +622,7 @@
                             </StackPanel>
                         </TabItem.Header>
                     </TabItem>
-                    <TabItem Tag="Pipeline">
+                    <TabItem Tag="Pipeline" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="P "/>
@@ -298,7 +630,7 @@
                             </StackPanel>
                         </TabItem.Header>
                     </TabItem>
-                    <TabItem Tag="Hub">
+                    <TabItem Tag="Hub" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="H "/>
@@ -309,107 +641,194 @@
                 </TabControl>
 
                 <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="0,0,15,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,20">
-                                <StackPanel>
-                                    <Border Height="3" Background="{StaticResource OpenStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
-                                    <TextBlock Text="OPEN" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource OpenStatusBrush}"/>
+                    <!-- Planning View (Single Column / WrapPanel) - Shown for Unplanned or non-backlog tabs -->
+                    <Grid Visibility="{Binding IsBoardViewVisible, Converter={StaticResource BooleanToVisibilityInverseConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,20">
+                            <Button Command="{Binding CreateIssueCommand}" CommandParameter="Open" 
+                                    Style="{StaticResource AccentButton}" HorizontalAlignment="Left" 
+                                    Padding="15,8" Margin="0,0,10,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="+ " FontWeight="Bold"/>
+                                    <TextBlock FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="Create New Issue"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedCategory}" Value="Hub">
+                                                        <Setter Property="Text" Value="Create Ideas"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedCategory}" Value="Pipeline">
+                                                        <Setter Property="Text" Value="Create New Story"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedCategory}" Value="Backlog">
+                                                        <Setter Property="Text" Value="Create New Issue"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
-                                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}" 
-                                        Command="{Binding CreateIssueCommand}" CommandParameter="Open" WindowChrome.IsHitTestVisibleInChrome="True">
-                                    <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
-                                </Button>
-                            </Grid>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding OpenItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
+                            </Button>
 
-                    <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,20">
-                                <StackPanel>
-                                    <Border Height="3" Background="{StaticResource InProgressStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
-                                    <TextBlock Text="IN PROGRESS" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource InProgressStatusBrush}"/>
+                            <Button Command="{Binding ToggleHubArchiveCommand}" Style="{StaticResource SidebarButton}" 
+                                    Padding="12,8"
+                                    Visibility="{Binding SelectedCategory, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Hub}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📁 " FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="Show Hub Archive" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ShowHubArchive}" Value="True">
+                                                        <Setter Property="Text" Value="Hide Hub Archive"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
-                                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
-                                        Command="{Binding CreateIssueCommand}" CommandParameter="In Progress" WindowChrome.IsHitTestVisibleInChrome="True">
-                                    <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
-                                </Button>
-                            </Grid>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding InProgressItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
+                            </Button>
+                        </StackPanel>
 
-                    <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,20">
-                                <StackPanel>
-                                    <Border Height="3" Background="{StaticResource TestingStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
-                                    <TextBlock Text="IN TESTING" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource TestingStatusBrush}"/>
-                                </StackPanel>
-                                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
-                                        Command="{Binding CreateIssueCommand}" CommandParameter="In Testing" WindowChrome.IsHitTestVisibleInChrome="True">
-                                    <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                             <ItemsControl ItemsSource="{Binding AllCategoryItems}" ItemTemplate="{StaticResource IssueCardTemplate}" Margin="0,10,0,0">
+                                 <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" 
+                                                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Backlog">
+                                                <Setter Property="Width" Value="300"/>
+                                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Hub">
+                                                <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource MultiplierConverter}, ConverterParameter=0.32}"/>
+                                                <Setter Property="Margin" Value="5"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Pipeline">
+                                                <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource MultiplierConverter}, ConverterParameter=0.32}"/>
+                                                <Setter Property="Margin" Value="5"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                             </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Board View (4 Columns) - Only shown for Sprint > Backlog -->
+                    <Grid Visibility="{Binding IsBoardViewVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="0,0,15,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <Border Height="3" Background="{StaticResource OpenStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
+                                        <TextBlock Text="OPEN" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource OpenStatusBrush}"/>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
+                                            Command="{Binding CreateIssueCommand}" CommandParameter="Open" WindowChrome.IsHitTestVisibleInChrome="True">
+                                        <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
                                     </Button>
+                                </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding OpenItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
+                                </ScrollViewer>
                             </Grid>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding TestingItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
+                        </Border>
 
-                    <Border Grid.Column="3" Padding="15,0,0,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Margin="0,0,0,20">
-                                <StackPanel>
-                                    <Border Height="3" Background="{StaticResource FinishedStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
-                                    <TextBlock Text="FINISHED" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource FinishedStatusBrush}"/>
-                                </StackPanel>
-                                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
-                                        Command="{Binding CreateIssueCommand}" CommandParameter="Finished" WindowChrome.IsHitTestVisibleInChrome="True">
-                                    <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
-                                </Button>
+                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <Border Height="3" Background="{StaticResource InProgressStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
+                                        <TextBlock Text="IN PROGRESS" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource InProgressStatusBrush}"/>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
+                                            Command="{Binding CreateIssueCommand}" CommandParameter="In Progress" WindowChrome.IsHitTestVisibleInChrome="True">
+                                        <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </Button>
+                                </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding InProgressItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
+                                </ScrollViewer>
                             </Grid>
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding FinishedItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
+                        </Border>
+
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <Border Height="3" Background="{StaticResource TestingStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
+                                        <TextBlock Text="IN TESTING" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource TestingStatusBrush}"/>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
+                                            Command="{Binding CreateIssueCommand}" CommandParameter="In Testing" WindowChrome.IsHitTestVisibleInChrome="True">
+                                        <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </Button>
+                                </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding TestingItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="3" Padding="15,0,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <Border Height="3" Background="{StaticResource FinishedStatusBrush}" CornerRadius="1.5" Margin="0,0,0,10" Width="40" HorizontalAlignment="Left"/>
+                                        <TextBlock Text="FINISHED" Style="{StaticResource CategoryHeader}" Foreground="{StaticResource FinishedStatusBrush}"/>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SidebarButton}"
+                                            Command="{Binding CreateIssueCommand}" CommandParameter="Finished" WindowChrome.IsHitTestVisibleInChrome="True">
+                                        <TextBlock Text="+" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </Button>
+                                </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding FinishedItems}" ItemTemplate="{StaticResource IssueCardTemplate}"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>
     </Grid>
 
         <!-- Project Modal Overlay -->
-        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsProjectModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="2500">
+        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsProjectModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="4000">
             <Border Background="#1A1D2E" CornerRadius="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
                     Width="500" Height="580" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid Margin="40">
@@ -450,7 +869,7 @@
         </Border>
 
         <!-- Sprint Planning Modal Overlay -->
-        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsSprintModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="2000">
+        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsSprintModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="3500">
             <Border Background="#1A1D2E" CornerRadius="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
                     Width="500" Height="450" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid Margin="40">
@@ -521,13 +940,27 @@
                 </Button>
 
                 <Grid Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <!-- Central Orb -->
-                    <Border Width="200" Height="200" Background="#1A1D2E" CornerRadius="100" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2" Panel.ZIndex="10">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="PL" FontSize="60" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="PROJECT HUB" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,5,0,0"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- Central Orb (Add Project Button) -->
+                    <Button Command="{Binding CreateProjectCommand}" Style="{StaticResource SidebarButton}" 
+                            Width="200" Height="200" Panel.ZIndex="10" Padding="0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#1A1D2E" CornerRadius="100" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2">
+                                    <Grid>
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Grid>
+                                                <Image Source="/Resources/sleipnir_logo.png" Height="80" Width="80" Margin="0,0,0,5"/>
+                                                <TextBlock Text="+" FontSize="30" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" 
+                                                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-10,-10,0"/>
+                                            </Grid>
+                                            <TextBlock Text="ADD NEW" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}"/>
+                                            <TextBlock Text="PROJECT" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{StaticResource TextMutedBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Projects Wheel (ItemsControl) -->
                     <ItemsControl ItemsSource="{Binding Projects}">

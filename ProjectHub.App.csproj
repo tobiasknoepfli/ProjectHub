@@ -15,4 +15,9 @@
     <PackageReference Include="supabase-csharp" Version="0.16.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\sleipnir_logo.png" />
+    <Resource Include="Resources\sleipnir.ico" />
+  </ItemGroup>
+
 </Project>

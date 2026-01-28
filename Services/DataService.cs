@@ -23,6 +23,8 @@ namespace ProjectHub.App.Services
 
         Task<List<IssueLog>> GetLogsAsync(Guid issueId);
         Task AddLogAsync(IssueLog log);
+
+        Task<List<Collaborator>> GetCollaboratorsAsync();
     }
 
     public class MockDataService : IDataService
@@ -31,6 +33,7 @@ namespace ProjectHub.App.Services
         private List<Sprint> _sprints = new List<Sprint>();
         private List<Issue> _issues = new List<Issue>();
         private List<IssueLog> _logs = new List<IssueLog>();
+        private List<Collaborator> _collaborators = new List<Collaborator>();
 
         public MockDataService()
         {
@@ -50,15 +53,49 @@ namespace ProjectHub.App.Services
             var s1 = new Sprint { ProjectId = p1.Id, Name = "Sprint 1", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(14) };
             _sprints.Add(s1);
 
+            var c1 = new Collaborator { Name = "Tobias K.", Email = "tobias@example.com" };
+            var c2 = new Collaborator { Name = "Sarah M.", Email = "sarah@example.com" };
+            var c3 = new Collaborator { Name = "Admin", Email = "admin@example.com" };
+            _collaborators.AddRange(new[] { c1, c2, c3 });
+
             _issues.Add(new Issue { 
                 ProjectId = p1.Id, 
                 ProgramComponent = "Game", 
                 SubComponents = "Add New Game;Add new Stadium", 
                 Description = "Add Button needs rounded corners",
+                LongDescription = "The current buttons are too sharp. We need a 8px corner radius across the entire UI for consistency.",
                 Type = "Bug", 
                 Category = "Backlog", 
                 Status = "Open",
-                CreatedAt = DateTime.UtcNow.AddDays(-2)
+                Priority = "Medium",
+                ResponsibleUsers = "Sarah M.",
+                CreatedAt = DateTime.UtcNow.AddDays(-1)
+            });
+
+            _issues.Add(new Issue {
+                ProjectId = p1.Id,
+                ProgramComponent = "Web",
+                Description = "Implement WebAssembly Support",
+                LongDescription = "Explore how we can run the engine in the browser via WASM.",
+                Type = "Feature",
+                Category = "Backlog",
+                Status = "Open",
+                Priority = "Critical",
+                ResponsibleUsers = "Tobias K.;Sarah M.",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-30)
+            });
+
+            _issues.Add(new Issue {
+                ProjectId = p1.Id,
+                ProgramComponent = "UI",
+                Description = "Glassmorphism Sidebar Idea",
+                LongDescription = "Think about adding a blur effect to the sidebar for a more modern look.",
+                Type = "Idea",
+                Category = "Backlog",
+                Status = "Open",
+                Priority = "Nice to Have",
+                ResponsibleUsers = "Tobias K.",
+                CreatedAt = DateTime.UtcNow
             });
 
             _issues.Add(new Issue { 
@@ -166,5 +203,7 @@ namespace ProjectHub.App.Services
             _logs.Add(log);
             return Task.CompletedTask;
         }
+
+        public Task<List<Collaborator>> GetCollaboratorsAsync() => Task.FromResult(_collaborators);
     }
 }

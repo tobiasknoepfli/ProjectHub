@@ -104,5 +104,11 @@ namespace ProjectHub.App.Services
         {
             await _client.From<IssueLog>().Insert(log);
         }
+
+        public async Task<List<Collaborator>> GetCollaboratorsAsync()
+        {
+            var response = await _client.From<Collaborator>().Get();
+            return response.Models ?? new List<Collaborator>();
+        }
     }
 }
