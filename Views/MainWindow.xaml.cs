@@ -45,7 +45,7 @@ namespace Sleipnir.App.Views
         private void SprintSelected_Click(object sender, RoutedEventArgs e)
         {
             // The command is handled in VM. We just close the popup.
-            DependencyObject current = sender as DependencyObject;
+            DependencyObject? current = sender as DependencyObject;
             while (current != null && !(current is Popup))
                 current = VisualTreeHelper.GetParent(current);
             
@@ -58,8 +58,8 @@ namespace Sleipnir.App.Views
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null || parameter == null) return Visibility.Collapsed;
-            var input = value.ToString();
-            var target = parameter.ToString();
+            var input = value.ToString() ?? string.Empty;
+            var target = parameter.ToString() ?? string.Empty;
             return input.Equals(target, StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -71,8 +71,9 @@ namespace Sleipnir.App.Views
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null || parameter == null) return Visibility.Visible;
-            var input = value.ToString();
-            var targets = parameter.ToString().Split('|');
+            var input = value.ToString() ?? string.Empty;
+            var targetParam = parameter.ToString() ?? string.Empty;
+            var targets = targetParam.Split('|');
             foreach (var target in targets)
             {
                 if (input.Equals(target.Trim(), StringComparison.OrdinalIgnoreCase)) return Visibility.Collapsed;

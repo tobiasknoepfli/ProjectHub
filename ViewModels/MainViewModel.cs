@@ -54,8 +54,7 @@ namespace Sleipnir.App.ViewModels
         [ObservableProperty]
         private bool _isArchiveVisible;
 
-        [ObservableProperty]
-        private bool _isCompactView;
+
         [ObservableProperty]
         private ObservableCollection<Collaborator> _collaborators = new();
         [ObservableProperty]
@@ -148,7 +147,7 @@ namespace Sleipnir.App.ViewModels
             });
 
             OpenIssueDetailCommand = new RelayCommand<Issue>(OpenIssueDetail);
-            ToggleViewModeCommand = new RelayCommand(() => IsCompactView = !IsCompactView);
+
             SetPlannedIssueCommand = new RelayCommand<Issue>(issue => PlannedIssue = issue);
 
             OpenProjectModalCommand = new RelayCommand(OpenProjectModal);
@@ -192,7 +191,7 @@ namespace Sleipnir.App.ViewModels
         public IRelayCommand BrowseLogoCommand { get; }
         public IRelayCommand ClearLogoCommand { get; }
         public IRelayCommand<Issue> OpenIssueDetailCommand { get; }
-        public IRelayCommand ToggleViewModeCommand { get; }
+
         public IRelayCommand<Issue> SetPlannedIssueCommand { get; }
 
         public IAsyncRelayCommand<Issue> AddStoryCommand { get; }
