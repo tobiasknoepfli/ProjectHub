@@ -1,4 +1,4 @@
-# ProjectLink 🚀
+# Sleipnir 🚀
 
 A modern, multi-user Jira-style desktop application built with C# and WPF.
 
