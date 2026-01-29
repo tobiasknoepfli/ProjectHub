@@ -705,15 +705,15 @@
                                     <Style TargetType="ContentPresenter">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Backlog">
-                                                <Setter Property="Width" Value="300"/>
-                                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                <Setter Property="Width" Value="350"/>
+                                                <Setter Property="Margin" Value="5"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Hub">
-                                                <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource MultiplierConverter}, ConverterParameter=0.32}"/>
+                                                <Setter Property="Width" Value="350"/>
                                                 <Setter Property="Margin" Value="5"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding DataContext.SelectedCategory, RelativeSource={RelativeSource AncestorType=Window}}" Value="Pipeline">
-                                                <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource MultiplierConverter}, ConverterParameter=0.32}"/>
+                                                <Setter Property="Width" Value="350"/>
                                                 <Setter Property="Margin" Value="5"/>
                                             </DataTrigger>
                                         </Style.Triggers>
