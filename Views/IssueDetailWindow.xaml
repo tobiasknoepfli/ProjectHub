@@ -116,10 +116,13 @@
         <Border Height="32" BorderBrush="#30363D" BorderThickness="0,0,0,1">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Background" Value="#141724"/>
+                    <Setter Property="Background" Value="#000129"/>
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Type}" Value="Idea">
                             <Setter Property="Background" Value="#2b2402"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Type}" Value="Story">
+                            <Setter Property="Background" Value="#250100"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -171,105 +174,120 @@
                     </StackPanel.Style>
                     <Grid Margin="0,0,0,25">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="1.2*"/>
                             <ColumnDefinition Width="30"/>
-                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
+ 
                         <!-- Kind Dropdown -->
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="KIND" FontSize="11" FontWeight="Bold" Foreground="#7C4DFF" Margin="0,0,0,8"/>
+                            <TextBlock Text="KIND" FontSize="11" FontWeight="Bold" Foreground="#FFD740" Margin="0,0,0,8"/>
                             <ComboBox ItemsSource="{Binding ViewModel.Kinds, RelativeSource={RelativeSource AncestorType=Window}}"
                                       SelectedItem="{Binding Type}"
-                                      Background="#2A2F45" BorderThickness="0" Padding="12" Foreground="White"/>
+                                      Background="#2A2F45" BorderThickness="0" Padding="12" Foreground="White">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Width="25" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding}" Value="Bug"><Setter Property="Text" Value="🐞"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Feature"><Setter Property="Text" Value="✨"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Patch"><Setter Property="Text" Value="🛠️"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Overhaul"><Setter Property="Text" Value="🏗️"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Alteration"><Setter Property="Text" Value="⚙️"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Story"><Setter Property="Text" Value="📘"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Idea"><Setter Property="Text" Value="💡"/></DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding}" Foreground="#FFD740" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
-
+ 
                         <!-- Priority Options -->
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="PRIORITY" FontSize="11" FontWeight="Bold" Foreground="#7C4DFF" Margin="0,0,0,8"/>
-                            <ListBox ItemsSource="{Binding ViewModel.Priorities, RelativeSource={RelativeSource AncestorType=Window}}"
-                                     SelectedItem="{Binding Priority}"
-                                     Background="Transparent" BorderThickness="0">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Vertical"/>
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <RadioButton IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                                                 Foreground="White" Margin="0,0,0,8">
-                                                        <RadioButton.Content>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Width="25">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="TextBlock">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding}" Value="Critical"><Setter Property="Text" Value="‼"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Very High"><Setter Property="Text" Value="❗"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="High"><Setter Property="Text" Value="↑"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Neutral"><Setter Property="Text" Value="→"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Low"><Setter Property="Text" Value="↓"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Very Low"><Setter Property="Text" Value="-"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Nice to Have"><Setter Property="Text" Value="--"/></DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                                                </TextBlock>
-                                                                <TextBlock Text="{Binding}" FontWeight="SemiBold">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="TextBlock">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding}" Value="Critical"><Setter Property="Foreground" Value="#FF4444"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Very High"><Setter Property="Foreground" Value="#FF8800"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="High"><Setter Property="Foreground" Value="#FFEE00"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Neutral"><Setter Property="Foreground" Value="#FFFFFF"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Low"><Setter Property="Foreground" Value="#88CCFF"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Very Low"><Setter Property="Foreground" Value="#4488FF"/></DataTrigger>
-                                                                                <DataTrigger Binding="{Binding}" Value="Nice to Have"><Setter Property="Foreground" Value="#00CED1"/></DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                                                </TextBlock>
-                                                            </StackPanel>
-                                                        </RadioButton.Content>
-                                                    </RadioButton>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                            </ListBox>
+                            <ComboBox ItemsSource="{Binding ViewModel.Priorities, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedItem="{Binding Priority}"
+                                      Background="#2A2F45" BorderThickness="0" Padding="12" Foreground="White">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Width="25" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding}" Value="Critical"><Setter Property="Text" Value="‼"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Very High"><Setter Property="Text" Value="❗"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="High"><Setter Property="Text" Value="↑"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Neutral"><Setter Property="Text" Value="→"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Low"><Setter Property="Text" Value="↓"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Very Low"><Setter Property="Text" Value="-"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Nice to Have"><Setter Property="Text" Value="--"/></DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding}" Value="Critical"><Setter Property="Foreground" Value="#FF4444"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Very High"><Setter Property="Foreground" Value="#FF8800"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="High"><Setter Property="Foreground" Value="#FFEE00"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Neutral"><Setter Property="Foreground" Value="#FFFFFF"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Low"><Setter Property="Foreground" Value="#88CCFF"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Very Low"><Setter Property="Foreground" Value="#4488FF"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding}" Value="Nice to Have"><Setter Property="Foreground" Value="#00CED1"/></DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
                     </Grid>
-
+ 
                     <!-- Assignees -->
                     <TextBlock Text="ASSIGNEES" FontSize="11" FontWeight="Bold" Foreground="#7C4DFF" Margin="0,0,0,8"/>
-                    <ItemsControl ItemsSource="{Binding ViewModel.Collaborators, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,0,20,25">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}" 
-                                          Foreground="White" Margin="0,0,20,10"
-                                          Click="CheckBox_Click">
-                                    <CheckBox.IsChecked>
-                                       <MultiBinding Converter="{StaticResource StringContainsMultiConverter}" Mode="OneWay">
-                                           <Binding Path="DataContext.ResponsibleUsers" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                                           <Binding Path="Name"/>
-                                       </MultiBinding>
-                                   </CheckBox.IsChecked>
-                                </CheckBox>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <Grid Margin="0,0,0,25">
+                        <ToggleButton x:Name="AssigneesToggle" Style="{StaticResource SidebarToggleButton}" Padding="15,10" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="👤 " Foreground="#8B949E"/>
+                                <TextBlock Text="{Binding ResponsibleUsers, FallbackValue='Assign Responsibles...'}" MaxWidth="300" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=AssigneesToggle}" StaysOpen="False" Placement="Bottom" PlacementTarget="{Binding ElementName=AssigneesToggle}" AllowsTransparency="True">
+                             <Border Background="#1A1D2E" BorderBrush="#30363D" BorderThickness="1" CornerRadius="8" Width="250" MaxHeight="300" Margin="0,5,0,0">
+                                 <ScrollViewer Margin="10">
+                                     <ItemsControl ItemsSource="{Binding ViewModel.Collaborators, RelativeSource={RelativeSource AncestorType=Window}}">
+                                         <ItemsControl.ItemTemplate>
+                                             <DataTemplate>
+                                                 <CheckBox Content="{Binding Name}" 
+                                                           Foreground="White" Margin="0,5"
+                                                           Click="CheckBox_Click">
+                                                     <CheckBox.IsChecked>
+                                                        <MultiBinding Converter="{StaticResource StringContainsMultiConverter}" Mode="OneWay">
+                                                            <Binding Path="DataContext.ResponsibleUsers" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                            <Binding Path="Name"/>
+                                                        </MultiBinding>
+                                                    </CheckBox.IsChecked>
+                                                 </CheckBox>
+                                             </DataTemplate>
+                                         </ItemsControl.ItemTemplate>
+                                     </ItemsControl>
+                                 </ScrollViewer>
+                             </Border>
+                        </Popup>
+                    </Grid>
 
                     <!-- Plan Button -->
                     <TextBlock Text="PLANNING" FontSize="11" FontWeight="Bold" Foreground="#7C4DFF" Margin="0,0,0,8"/>
@@ -338,7 +356,7 @@
                                     <Setter Property="Text" Value="LINKED ITEMS"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Type}" Value="Idea"><Setter Property="Text" Value="LINKED STORIES"/></DataTrigger>
-                                        <DataTrigger Binding="{Binding Type}" Value="Story"><Setter Property="Text" Value="LINKED BACKLOG ISSUES"/></DataTrigger>
+                                        <DataTrigger Binding="{Binding Type}" Value="Story"><Setter Property="Text" Value="LINKED ISSUES"/></DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
@@ -367,22 +385,40 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" VerticalAlignment="Center">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="📋"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Type}" Value="Story">
-                                                            <Setter Property="Text" Value="📘"/>
-                                                            <Setter Property="Foreground" Value="#FF5252"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="📋"/>
+                                                        <Setter Property="Foreground" Value="#4D7CFF"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Type}" Value="Bug"><Setter Property="Text" Value="🐞"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Type}" Value="Feature"><Setter Property="Text" Value="✨"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Type}" Value="Story"><Setter Property="Text" Value="📘"/><Setter Property="Foreground" Value="#FF5252"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Type}" Value="Idea"><Setter Property="Text" Value="💡"/><Setter Property="Foreground" Value="#FFD740"/></DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock FontSize="10" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Critical"><Setter Property="Text" Value="‼"/><Setter Property="Foreground" Value="#FF4444"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Very High"><Setter Property="Text" Value="❗"/><Setter Property="Foreground" Value="#FF8800"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="High"><Setter Property="Text" Value="↑"/><Setter Property="Foreground" Value="#FFEE00"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Neutral"><Setter Property="Text" Value="→"/><Setter Property="Foreground" Value="White"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Low"><Setter Property="Text" Value="↓"/><Setter Property="Foreground" Value="#88CCFF"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Very Low"><Setter Property="Text" Value="-"/><Setter Property="Foreground" Value="#4488FF"/></DataTrigger>
+                                                            <DataTrigger Binding="{Binding Priority}" Value="Nice to Have"><Setter Property="Text" Value="--"/><Setter Property="Foreground" Value="#00CED1"/></DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
                                         <TextBlock Grid.Column="1" Text="{Binding Description}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                            <Border Background="#2A2F45" Padding="6,2" CornerRadius="3" Margin="0,0,10,0">
+                                            <Border Background="#2A2F45" Padding="6,2" CornerRadius="3" Margin="0,0,10,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Status}" FontSize="9" FontWeight="Bold" Foreground="#8B949E"/>
                                             </Border>
                                             
@@ -395,7 +431,7 @@
                                                     Click="UnlinkChild_Click">
                                                 <TextBlock Text="🔗" FontSize="10" Foreground="#FF5252"/>
                                             </Button>
-
+                                            
                                             <Button Style="{StaticResource SidebarButton}" Padding="5"
                                                     Click="DeleteChild_Click">
                                                 <TextBlock Text="✕" FontSize="10" Foreground="#FF5252"/>
@@ -428,7 +464,7 @@
                              <TextBlock Text="Delete" Foreground="#FF5252"/>
                          </StackPanel>
                      </Button>
-
+ 
                       <!-- Link/Unlink Action -->
                       <Grid Margin="10,0,0,0">
                           <Grid.Style>
@@ -442,7 +478,7 @@
                                   Visibility="{Binding ParentFriendlyId, Converter={StaticResource NullToVisibilityConverter}}">
                               <StackPanel Orientation="Horizontal">
                                   <TextBlock Text="🔗 " Foreground="#FF5252"/>
-                                  <TextBlock Text="Unlink Parent" Foreground="#FF5252"/>
+                                  <TextBlock Text="Unlink Idea" Foreground="#FF5252"/>
                               </StackPanel>
                           </Button>
 
@@ -450,7 +486,7 @@
                               <ToggleButton x:Name="FooterLinkToggle" Style="{StaticResource SidebarToggleButton}" Width="120">
                                   <StackPanel Orientation="Horizontal">
                                       <TextBlock Text="🔗 " Foreground="{StaticResource AccentBrush}"/>
-                                      <TextBlock Text="Link Parent" Foreground="{StaticResource AccentBrush}"/>
+                                      <TextBlock Text="Link Idea" Foreground="{StaticResource AccentBrush}"/>
                                   </StackPanel>
                               </ToggleButton>
                               <Popup IsOpen="{Binding IsChecked, ElementName=FooterLinkToggle}" StaysOpen="False" Placement="Top" PlacementTarget="{Binding ElementName=FooterLinkToggle}" AllowsTransparency="True">

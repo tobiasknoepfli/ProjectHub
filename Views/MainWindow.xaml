@@ -53,8 +53,23 @@
                                     </Border>
                                 </StackPanel>
                                 
-                                <TextBlock Text="{Binding TypeTag}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding PriorityTag}" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                                <TextBlock Text="{Binding TypeTag}" FontSize="11" Foreground="#FFD740" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding PriorityTag}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,15">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#8B949E"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Critical"><Setter Property="Foreground" Value="#FF4444"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Very High"><Setter Property="Foreground" Value="#FF8800"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="High"><Setter Property="Foreground" Value="#FFEE00"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Neutral"><Setter Property="Foreground" Value="#FFFFFF"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Low"><Setter Property="Foreground" Value="#88CCFF"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Very Low"><Setter Property="Foreground" Value="#4488FF"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Priority}" Value="Nice to Have"><Setter Property="Foreground" Value="#00CED1"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
                                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" 
                                          Background="Transparent" BorderThickness="0" Foreground="White" 

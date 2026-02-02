@@ -76,7 +76,7 @@ namespace Sleipnir.App.Views
         {
             if (sender is Button btn && btn.DataContext is Issue child)
             {
-                var result = ActionDialog.Show("Unlink Story", $"Are you sure you want to unlink '{child.Description}' from this idea?", "Unlink");
+                var result = ActionDialog.Show("Unlink", $"Are you sure you want to unlink '{child.Description}'?", _issue.Type, "Unlink");
                 if (result == ActionDialog.DialogResultAction.Action1)
                 {
                     await _viewModel.UnlinkIssueCommand.ExecuteAsync(child);
@@ -88,7 +88,7 @@ namespace Sleipnir.App.Views
         {
             if (sender is Button btn && btn.DataContext is Issue child)
             {
-                var result = ActionDialog.Show("Delete", $"Are you sure you want to PERMANENTLY delete '{child.Description}'?", "Delete");
+                var result = ActionDialog.Show("Delete", $"Are you sure you want to permanently delete '{child.Description}'?", _issue.Type, "Delete");
                 if (result == ActionDialog.DialogResultAction.Action1)
                 {
                     await _viewModel.DeleteIssueDirectAsync(child);
@@ -98,11 +98,12 @@ namespace Sleipnir.App.Views
 
         private async void Archive_Click(object sender, RoutedEventArgs e)
         {
-            if (_issue.Type == "Idea" && _issue.Children.Any())
+            if ((_issue.Type == "Idea" || _issue.Type == "Story") && _issue.Children.Any())
             {
-                var result = ActionDialog.Show("Archive Idea", 
-                    "This idea has linked stories. What do you want to do with them?", 
-                    "Archive Stories", "Unlink Stories");
+                var itemType = _issue.Type == "Idea" ? "stories" : "issues";
+                var result = ActionDialog.Show($"Archive {_issue.Type}", 
+                    $"This {_issue.Type} has linked {itemType}. What do you want to do with them?", 
+                    _issue.Type, "Archive issues", "Unlink issues");
                 
                 if (result == ActionDialog.DialogResultAction.Cancel) return;
                 
@@ -129,11 +130,12 @@ namespace Sleipnir.App.Views
 
         private async void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if (_issue.Type == "Idea" && _issue.Children.Any())
+            if ((_issue.Type == "Idea" || _issue.Type == "Story") && _issue.Children.Any())
             {
-                var result = ActionDialog.Show("Delete Idea", 
-                    "This idea has linked stories. What do you want to do with them?", 
-                    "Delete Stories", "Unlink Stories");
+                var itemType = _issue.Type == "Idea" ? "stories" : "issues";
+                var result = ActionDialog.Show($"Delete {_issue.Type}", 
+                    $"This {_issue.Type} has linked {itemType}. What do you want to do with them?", 
+                    _issue.Type, "Delete issues", "Unlink issues");
                 
                 if (result == ActionDialog.DialogResultAction.Cancel) return;
 
@@ -153,12 +155,7 @@ namespace Sleipnir.App.Views
             }
             else
             {
-                // For regular cases, if it's an Idea with no children, we still want a custom confirmation?
-                // The user said: "if the custom popup appears, don't ask again".
-                // If it's an Idea/Story with no linked items, the custom popup (action dialog) wouldn't appear currently.
-                // Let's add the confirmation here too to be safe and consistent.
-                
-                var result = ActionDialog.Show("Delete", $"Are you sure you want to delete '{_issue.Description}'?", "Delete");
+                var result = ActionDialog.Show("Delete", $"Are you sure you want to delete '{_issue.Description}'?", _issue.Type, "Delete");
                 if (result == ActionDialog.DialogResultAction.Action1)
                 {
                     await _viewModel.DeleteIssueDirectAsync(_issue);

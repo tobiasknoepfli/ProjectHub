@@ -86,7 +86,7 @@ namespace Sleipnir.App.Models
             => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
 
         private string _status = "Open";
-        private string _priority = "Medium";
+        private string _priority = "Neutral";
         private string _responsibleUsers = string.Empty;
         private string _description = string.Empty;
         private string _longDescription = string.Empty;

@@ -657,10 +657,7 @@ namespace Sleipnir.App.ViewModels
             _allProjectIssues.Add(issue);
             RefreshCategorizedIssues();
 
-            if (issue.Type == "Idea" || issue.Type == "Story")
-            {
-                OpenIssueDetail(issue);
-            }
+            OpenIssueDetail(issue);
         }
 
         private async Task AddStoryAsync(Issue? idea)
@@ -672,7 +669,7 @@ namespace Sleipnir.App.ViewModels
                 ProjectId = SelectedProject.Id,
                 ParentIssueId = idea.Id,
                 ProgramComponent = idea.ProgramComponent,
-                Description = "New Story",
+                Description = "Descriptive Title",
                 Category = "Pipeline",
                 Type = "Story",
                 Status = "Open",
@@ -696,7 +693,7 @@ namespace Sleipnir.App.ViewModels
                 ProjectId = SelectedProject.Id,
                 ParentIssueId = story.Id,
                 ProgramComponent = story.ProgramComponent,
-                Description = "New Backlog Issue",
+                Description = "Descriptive Title",
                 Category = "Backlog",
                 Type = "Bug",
                 Status = "Open"
@@ -705,6 +702,8 @@ namespace Sleipnir.App.ViewModels
             await _dataService.CreateIssueAsync(issue);
             _allProjectIssues.Add(issue);
             RefreshCategorizedIssues();
+
+            OpenIssueDetail(issue);
         }
 
         private async Task AssignToSpecificSprintAsync(Sprint? sprint)

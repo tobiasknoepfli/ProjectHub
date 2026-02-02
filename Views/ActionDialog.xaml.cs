@@ -14,12 +14,14 @@ namespace Sleipnir.App.Views
 
         public DialogResultAction Result { get; private set; } = DialogResultAction.Cancel;
 
-        public ActionDialog(string title, string message, string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
+        public ActionDialog(string title, string message, string type = "Issue", string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
         {
             InitializeComponent();
             DialogTitle.Text = title;
             DialogMessage.Text = message;
             
+            SetTitleBarColor(type);
+
             if (!string.IsNullOrEmpty(btn1Text))
             {
                 Btn1.Content = btn1Text;
@@ -35,9 +37,20 @@ namespace Sleipnir.App.Views
             BtnCancel.Content = cancelText;
         }
 
-        public static DialogResultAction Show(string title, string message, string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
+        private void SetTitleBarColor(string type)
         {
-            var dialog = new ActionDialog(title, message, btn1Text, btn2Text, cancelText);
+            var color = type switch
+            {
+                "Idea" => "#2b2402",
+                "Story" => "#250100",
+                _ => "#000129"
+            };
+            try { TitleBar.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(color); } catch { }
+        }
+
+        public static DialogResultAction Show(string title, string message, string type = "Issue", string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
+        {
+            var dialog = new ActionDialog(title, message, type, btn1Text, btn2Text, cancelText);
             dialog.ShowDialog();
             return dialog.Result;
         }
