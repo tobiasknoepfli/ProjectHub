@@ -24,7 +24,7 @@ namespace Sleipnir.App.ViewModels
         [ObservableProperty]
         private string _selectedCategory = "Backlog"; 
 
-        public string CurrentViewTitle => SelectedSprint == null ? "Unplanned Issues" : $"Sprint: {SelectedSprint.Name}";
+        public string CurrentViewTitle => SelectedSprint == null ? "Project Pool" : SelectedSprint.Name;
 
         public bool IsBoardViewVisible => SelectedSprint != null && SelectedCategory == "Backlog";
 
@@ -116,6 +116,10 @@ namespace Sleipnir.App.ViewModels
         private string _projectModalTitle = "Create New Project";
         [ObservableProperty]
         private bool _showHubArchive;
+        [ObservableProperty]
+        private bool _showPipelineArchive;
+        [ObservableProperty]
+        private bool _showBacklogArchive;
 
         [ObservableProperty]
         private Issue? _plannedIssue;
@@ -137,6 +141,8 @@ namespace Sleipnir.App.ViewModels
             AssignToSprintCommand = new AsyncRelayCommand<Sprint>(AssignToSpecificSprintAsync);
             ToggleArchiveCommand = new RelayCommand(() => IsArchiveVisible = !IsArchiveVisible);
             ToggleHubArchiveCommand = new RelayCommand(() => { ShowHubArchive = !ShowHubArchive; RefreshCategorizedIssues(); });
+            TogglePipelineArchiveCommand = new RelayCommand(() => { ShowPipelineArchive = !ShowPipelineArchive; RefreshCategorizedIssues(); });
+            ToggleBacklogArchiveCommand = new RelayCommand(() => { ShowBacklogArchive = !ShowBacklogArchive; RefreshCategorizedIssues(); });
             RestoreIssueCommand = new AsyncRelayCommand<Issue>(RestoreIssueAsync);
             DeleteSprintCommand = new AsyncRelayCommand(DeleteSprintAsync);
             ToggleProjectSelectorCommand = new RelayCommand(() => IsProjectSelectorVisible = !IsProjectSelectorVisible);
@@ -205,6 +211,8 @@ namespace Sleipnir.App.ViewModels
         public IRelayCommand<object> JumpToIssueCommand { get; }
         public IAsyncRelayCommand<Issue> ArchiveIssueCommand { get; }
         public IRelayCommand ToggleHubArchiveCommand { get; }
+        public IRelayCommand TogglePipelineArchiveCommand { get; }
+        public IRelayCommand ToggleBacklogArchiveCommand { get; }
         public IAsyncRelayCommand<Issue> RestoreIssueCommand { get; }
 
         public System.Collections.ObjectModel.ObservableCollection<Issue> PotentialParents { get; } = new();
@@ -379,20 +387,29 @@ namespace Sleipnir.App.ViewModels
             {
                 filtered = filtered.Where(i => i.Status == "Archived").ToList();
             }
+            else if (SelectedCategory == "Pipeline" && ShowPipelineArchive)
+            {
+                filtered = filtered.Where(i => i.Status == "Archived").ToList();
+            }
+            else if (SelectedCategory == "Backlog" && ShowBacklogArchive)
+            {
+                filtered = filtered.Where(i => i.Status == "Archived").ToList();
+            }
             else
             {
                 filtered = filtered.Where(i => i.Status != "Archived").ToList();
-            }
 
-            if (SelectedCategory == "Backlog")
-            {
-                if (SelectedSprint != null)
+                // Only apply category-specific sub-filters when NOT in archive mode
+                if (SelectedCategory == "Backlog")
                 {
-                    filtered = filtered.Where(i => i.SprintId == SelectedSprint.Id).ToList();
-                }
-                else
-                {
-                    filtered = filtered.Where(i => i.SprintId == null).ToList();
+                    if (SelectedSprint != null)
+                    {
+                        filtered = filtered.Where(i => i.SprintId == SelectedSprint.Id).ToList();
+                    }
+                    else
+                    {
+                        filtered = filtered.Where(i => i.SprintId == null).ToList();
+                    }
                 }
             }
 
@@ -979,7 +996,7 @@ namespace Sleipnir.App.ViewModels
         private async Task RestoreIssueAsync(Issue? issue)
         {
             if (issue == null) return;
-            issue.Status = "Finished"; // Restore to finished state
+            issue.Status = "Open"; // Restore to open state
             await _dataService.UpdateIssueAsync(issue);
             RefreshCategorizedIssues();
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Postgrest.Attributes;
 using Postgrest.Models;
+using Newtonsoft.Json;
 
 namespace Sleipnir.App.Models
 {
@@ -55,8 +56,11 @@ namespace Sleipnir.App.Models
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
 
+        [JsonIgnore]
         public bool IsCurrent => DateTime.Today >= StartDate.Date && DateTime.Today <= EndDate.Date;
+        [JsonIgnore]
         public bool CanBeCompleted => IsActive && DateTime.Today > EndDate.Date;
+        [JsonIgnore]
         public bool IsPast => !IsActive;
     }
 
@@ -136,6 +140,7 @@ namespace Sleipnir.App.Models
 
         // UI support for hierarchy
         private System.Collections.ObjectModel.ObservableCollection<Issue> _children = new();
+        [JsonIgnore]
         public System.Collections.ObjectModel.ObservableCollection<Issue> Children 
         { 
             get => _children; 
@@ -143,21 +148,28 @@ namespace Sleipnir.App.Models
         }
 
         private string? _parentTitle;
+        [JsonIgnore]
         public string? ParentTitle { get => _parentTitle; set { _parentTitle = value; OnPropertyChanged(); } }
 
         private string? _sprintTag;
+        [JsonIgnore]
         public string? SprintTag { get => _sprintTag; set { _sprintTag = value; OnPropertyChanged(); } }
         
         private int? _parentFriendlyId;
+        [JsonIgnore]
         public int? ParentFriendlyId { get => _parentFriendlyId; set { _parentFriendlyId = value; OnPropertyChanged(); OnPropertyChanged(nameof(ParentIdeaNumber)); OnPropertyChanged(nameof(ParentStoryNumber)); } }
         
+        [JsonIgnore]
         public string? ParentIdeaNumber => ParentFriendlyId.HasValue ? $"Idea #{ParentFriendlyId.Value:D5}" : null;
         
         private int? _parentStoryFriendlyId;
+        [JsonIgnore]
         public int? ParentStoryFriendlyId { get => _parentStoryFriendlyId; set { _parentStoryFriendlyId = value; OnPropertyChanged(); OnPropertyChanged(nameof(ParentStoryNumber)); } }
+        [JsonIgnore]
         public string? ParentStoryNumber => ParentStoryFriendlyId.HasValue ? $"Story #{ParentStoryFriendlyId.Value:D5}" : null;
 
         // Formatted title: Program / Sub1 / Sub2 : Description
+        [JsonIgnore]
         public string FormattedTitle
         {
             get
@@ -173,13 +185,19 @@ namespace Sleipnir.App.Models
             }
         }
 
+        [JsonIgnore]
         public string LocationTag => Status == "Archived" ? $"{Category} Archive" : Category;
+        [JsonIgnore]
         public string FullLocationTag => ParentFriendlyId.HasValue ? $"{LocationTag} | {SprintTag}" : LocationTag;
 
+        [JsonIgnore]
         public string IdeaNumber => $"Idea #{FriendlyId:D5}";
+        [JsonIgnore]
         public string StoryNumber => $"Story #{FriendlyId:D5}";
+        [JsonIgnore]
         public string IssueNumber => $"Issue #{FriendlyId:D5}";
 
+        [JsonIgnore]
         public string TypeTag => Type switch
         {
             "Bug" => "🐞 Bug",
@@ -192,6 +210,7 @@ namespace Sleipnir.App.Models
             _ => $"📋 {Type}"
         };
 
+        [JsonIgnore]
         public string PriorityTag => Priority switch
         {
             "Critical" => "‼ CRITICAL",
@@ -204,12 +223,15 @@ namespace Sleipnir.App.Models
             _ => $"📋 {Priority.ToUpper()}"
         };
 
+        [JsonIgnore]
         public int StoryCount => Children.Count;
+        [JsonIgnore]
         public int IssueCount => Children.Count;
 
         [Column("friendly_id")]
         public int FriendlyId { get; set; }
 
+        [JsonIgnore]
         public string AgeString
         {
             get
@@ -221,6 +243,7 @@ namespace Sleipnir.App.Models
             }
         }
 
+        [JsonIgnore]
         public bool CanBeArchived
         {
             get

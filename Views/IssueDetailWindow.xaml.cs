@@ -231,7 +231,7 @@ namespace Sleipnir.App.Views
         }
         public object[] ConvertBack(object value, System.Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
         {
-            return null;
+            return null!;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Sleipnir.App.Views
 
         public DialogResultAction Result { get; private set; } = DialogResultAction.Cancel;
 
-        public ActionDialog(string title, string message, string type = "Issue", string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
+        public ActionDialog(string title, string message, string type = "Issue", string? btn1Text = null, string? btn2Text = null, string cancelText = "Cancel")
         {
             InitializeComponent();
             DialogTitle.Text = title;
@@ -45,10 +45,10 @@ namespace Sleipnir.App.Views
                 "Story" => "#250100",
                 _ => "#000129"
             };
-            try { TitleBar.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(color); } catch { }
+            try { TitleBar.Background = (System.Windows.Media.Brush?)new System.Windows.Media.BrushConverter().ConvertFrom(color); } catch { }
         }
 
-        public static DialogResultAction Show(string title, string message, string type = "Issue", string btn1Text = null, string btn2Text = null, string cancelText = "Cancel")
+        public static DialogResultAction Show(string title, string message, string type = "Issue", string? btn1Text = null, string? btn2Text = null, string cancelText = "Cancel")
         {
             var dialog = new ActionDialog(title, message, type, btn1Text, btn2Text, cancelText);
             dialog.ShowDialog();

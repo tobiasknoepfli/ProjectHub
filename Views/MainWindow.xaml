@@ -30,12 +30,18 @@
         <local:MultiplierConverter x:Key="MultiplierConverter"/>
 
         <DataTemplate x:Key="IssueCardTemplate">
-            <Border Style="{StaticResource ModernCard}" Margin="0,0,0,12" Background="#1C1F30" Padding="15">
+            <Border Margin="0,0,0,12" Background="#1C1F30" Padding="15">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftDoubleClick" 
                                   Command="{Binding DataContext.OpenIssueDetailCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                                   CommandParameter="{Binding}"/>
                 </Border.InputBindings>
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource ModernCard}">
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="IssueCard_PreviewMouseLeftButtonDown"/>
+                        <EventSetter Event="MouseMove" Handler="IssueCard_MouseMove"/>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <!-- Standard Issue Layout -->
                     <StackPanel x:Name="StandardLayout">
@@ -316,7 +322,7 @@
                                     Click="AllIssues_Click" Margin="0,0,0,20">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📋" Margin="0,0,12,0" FontSize="16"/>
-                                    <TextBlock Text="Unplanned Issues" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Project Pool" FontWeight="Medium" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -395,7 +401,15 @@
                         </StackPanel>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <TextBlock Text="{Binding CurrentViewTitle}" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="{Binding CurrentViewTitle}" FontSize="32" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,8,0,0"
+                                        Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}">
+                                <TextBlock Text="{Binding SelectedSprint.StartDate, StringFormat='{}{0:dd.MM.yyyy}'}" 
+                                           FontSize="16" Foreground="{StaticResource TextMutedBrush}"/>
+                                <TextBlock Text=" — " FontSize="16" Foreground="{StaticResource TextMutedBrush}"/>
+                                <TextBlock Text="{Binding SelectedSprint.EndDate, StringFormat='{}{0:dd.MM.yyyy}'}" 
+                                           FontSize="16" Foreground="{StaticResource TextMutedBrush}"/>
+                            </StackPanel>
                             <Button Command="{Binding EditSprintModalCommand}" Style="{StaticResource WindowControlButton}" Width="25" Height="25" Margin="10,5,0,0" Padding="0"
                                     Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}">
                                 <TextBlock Text="✎" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
@@ -425,15 +439,26 @@
                             SelectedValuePath="Tag">
                     <TabItem Tag="Backlog">
                         <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="B "/>
-                                <TextBlock Text="Backlog"/>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="Text" Value="Backlog"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible">
+                                                    <Setter Property="Text" Value="Board"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </StackPanel>
                         </TabItem.Header>
                     </TabItem>
                     <TabItem Tag="Pipeline" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
                         <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="P "/>
                                 <TextBlock Text="Pipeline"/>
                             </StackPanel>
@@ -441,7 +466,7 @@
                     </TabItem>
                     <TabItem Tag="Hub" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
                         <TabItem.Header>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="H "/>
                                 <TextBlock Text="Hub"/>
                             </StackPanel>
@@ -484,9 +509,19 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button Command="{Binding ToggleHubArchiveCommand}" Style="{StaticResource SidebarButton}" 
-                                    Padding="12,8"
+                            <Button Command="{Binding ToggleHubArchiveCommand}" Padding="12,8"
                                     Visibility="{Binding SelectedCategory, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Hub}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowHubArchive}" Value="True">
+                                                <Setter Property="Background" Value="#3DFFD740"/>
+                                                <Setter Property="BorderBrush" Value="#FFD740"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📁 " FontSize="12" Opacity="0.7"/>
                                     <TextBlock Text="Show Hub Archive" FontWeight="SemiBold">
@@ -495,6 +530,89 @@
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding ShowHubArchive}" Value="True">
                                                         <Setter Property="Text" Value="Hide Hub Archive"/>
+                                                        <Setter Property="Foreground" Value="#FFD740"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Command="{Binding TogglePipelineArchiveCommand}" Padding="12,8"
+                                    Visibility="{Binding SelectedCategory, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Pipeline}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowPipelineArchive}" Value="True">
+                                                <Setter Property="Background" Value="#3DFF5252"/>
+                                                <Setter Property="BorderBrush" Value="#FF5252"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📁 " FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="Show Pipeline Archive" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ShowPipelineArchive}" Value="True">
+                                                        <Setter Property="Text" Value="Hide Pipeline Archive"/>
+                                                        <Setter Property="Foreground" Value="#FF5252"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Command="{Binding ToggleBacklogArchiveCommand}" Padding="12,8"
+                                    Visibility="{Binding SelectedCategory, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Backlog}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowBacklogArchive}" Value="True">
+                                                <Setter Property="Background" Value="#3D4D7CFF"/>
+                                                <Setter Property="BorderBrush" Value="#4D7CFF"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📁 " FontSize="12" Opacity="0.7"/>
+                                    <TextBlock FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Setter Property="Text" Value="Show Backlog Archive"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowBacklogArchive}" Value="True"/>
+                                                            <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Collapsed"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Text" Value="Hide Backlog Archive"/>
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowBacklogArchive}" Value="False"/>
+                                                            <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Text" Value="Show Board Archive"/>
+                                                    </MultiDataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding ShowBacklogArchive}" Value="True"/>
+                                                            <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Text" Value="Hide Board Archive"/>
+                                                        <Setter Property="Foreground" Value="#4D7CFF"/>
+                                                    </MultiDataTrigger>
+                                                    <DataTrigger Binding="{Binding ShowBacklogArchive}" Value="True">
+                                                        <Setter Property="Foreground" Value="#4D7CFF"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -543,7 +661,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="0,0,15,0">
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="0,0,15,0"
+                                AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="Open" Background="Transparent">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -565,7 +684,8 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
+                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0"
+                                AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="In Progress" Background="Transparent">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -587,7 +707,8 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0">
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="15,0,15,0"
+                                AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="In Testing" Background="Transparent">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -609,7 +730,8 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="3" Padding="15,0,0,0">
+                        <Border Grid.Column="3" Padding="15,0,0,0"
+                                AllowDrop="True" Drop="Column_Drop" DragOver="Column_DragOver" Tag="Finished" Background="Transparent">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>

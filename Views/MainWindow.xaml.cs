@@ -1,9 +1,13 @@
 using System;
-using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Controls.Primitives;
+using System.Globalization;
+using System.Linq;
+using Sleipnir.App.Models;
 using Sleipnir.App.ViewModels;
 using Sleipnir.App.Services;
 
@@ -15,11 +19,19 @@ namespace Sleipnir.App.Views
         {
             InitializeComponent();
             
-            var dataService = new MockDataService();
+            // Connected to USER's Supabase project
+            var dataService = new SupabaseDataService(
+                "https://sagdinxeeztqhxqjvcyo.supabase.co", 
+                "sb_publishable_3SmPKI_gR-UWCoxMv3A5Qw_Bqe3du7U");
+
             var viewModel = new MainViewModel(dataService);
             DataContext = viewModel;
 
-            Loaded += async (s, e) => await viewModel.LoadDataCommand.ExecuteAsync(null);
+            Loaded += async (s, e) => 
+            {
+                await dataService.InitializeAsync();
+                await viewModel.LoadDataCommand.ExecuteAsync(null);
+            };
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => this.Close();
@@ -39,6 +51,75 @@ namespace Sleipnir.App.Views
             if (DataContext is MainViewModel vm)
             {
                 vm.SelectedSprint = null;
+            }
+        }
+
+        private Point _dragStartPoint;
+
+        private void IssueCard_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _dragStartPoint = e.GetPosition(null);
+        }
+
+        private void IssueCard_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                Point position = e.GetPosition(null);
+                if (Math.Abs(position.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(position.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    if (sender is FrameworkElement fe && fe.DataContext is Issue issue)
+                    {
+                        DragDrop.DoDragDrop(fe, issue, DragDropEffects.Move);
+                    }
+                }
+            }
+        }
+
+        private async void TabItem_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetData(typeof(Issue)) is Issue issue)
+            {
+                if (issue.Status == "Archived" && DataContext is MainViewModel vm)
+                {
+                    // Find the TabItem to get the Tag
+                    DependencyObject? current = sender as DependencyObject;
+                    while (current != null && !(current is TabItem))
+                        current = VisualTreeHelper.GetParent(current);
+
+                    if (current is TabItem tabItem && tabItem.Tag is string targetCategory)
+                    {
+                        // Ensure we are dropping into the right category
+                        if (issue.Category.Equals(targetCategory, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await vm.RestoreIssueCommand.ExecuteAsync(issue);
+                        }
+                    }
+                }
+            }
+        }
+        private void Column_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(Issue)))
+            {
+                e.Effects = DragDropEffects.Move;
+                e.Handled = true;
+            }
+        }
+
+        private async void Column_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetData(typeof(Issue)) is Issue issue && DataContext is MainViewModel vm)
+            {
+                if (sender is FrameworkElement fe && fe.Tag is string targetStatus)
+                {
+                    if (issue.Status != targetStatus)
+                    {
+                        issue.Status = targetStatus;
+                        await vm.UpdateIssueAsync(issue);
+                    }
+                }
             }
         }
 
