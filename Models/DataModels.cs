@@ -282,4 +282,88 @@ namespace Sleipnir.App.Models
         [Column("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
+    [Table("users")]
+    public class AppUser : BaseModel, System.ComponentModel.INotifyPropertyChanged
+    {
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+
+        private string _username = string.Empty;
+        private string _password = string.Empty;
+        private string _firstName = string.Empty;
+        private string _lastName = string.Empty;
+        private string _email = string.Empty;
+        private string _pendingEmail = string.Empty;
+        private string _verificationCode = string.Empty;
+        private bool _isEmailVerified;
+        private bool _isRoot;
+        private bool _isPasswordRevealed;
+        private string _emoji = "Account";
+        private bool _isSuperuser;
+        private bool _canAutoLogin;
+
+        [JsonIgnore]
+        public bool IsPasswordRevealed { get => _isPasswordRevealed; set { _isPasswordRevealed = value; OnPropertyChanged(); } }
+        private string _allowedProjectIds = string.Empty; // Semicolon separated IDs
+
+        [PrimaryKey("id", false)]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [Column("username")]
+        public string Username { get => _username; set { _username = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsOriginalAdmin)); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("password")]
+        public string Password { get => _password; set { _password = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("first_name")]
+        public string FirstName { get => _firstName; set { _firstName = value; OnPropertyChanged(); OnPropertyChanged(nameof(FullName)); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("last_name")]
+        public string LastName { get => _lastName; set { _lastName = value; OnPropertyChanged(); OnPropertyChanged(nameof(FullName)); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("email")]
+        public string Email { get => _email; set { _email = value; OnPropertyChanged(); } }
+
+        [Column("pending_email")]
+        public string PendingEmail { get => _pendingEmail; set { _pendingEmail = value; OnPropertyChanged(); } }
+
+        [Column("verification_code")]
+        public string VerificationCode { get => _verificationCode; set { _verificationCode = value; OnPropertyChanged(); } }
+
+        [Column("is_email_verified")]
+        public bool IsEmailVerified { get => _isEmailVerified; set { _isEmailVerified = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("is_root")]
+        public bool IsRoot { get => _isRoot; set { _isRoot = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsOriginalAdmin)); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("emoji")]
+        public string Emoji { get => _emoji; set { _emoji = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
+
+        [Column("is_superuser")]
+        public bool IsSuperuser { get => _isSuperuser; set { _isSuperuser = value; OnPropertyChanged(); } }
+
+        [Column("can_auto_login")]
+        public bool CanAutoLogin { get => _canAutoLogin; set { _canAutoLogin = value; OnPropertyChanged(); } }
+
+        [Column("allowed_project_ids")]
+        public string AllowedProjectIds { get => _allowedProjectIds; set { _allowedProjectIds = value; OnPropertyChanged(); } }
+
+        [JsonIgnore]
+        public string FullName => $"{FirstName} {LastName}";
+
+        [JsonIgnore]
+        public bool IsOriginalAdmin => IsRoot;
+
+        [JsonIgnore]
+        public bool CanEditProtectedFields => !IsRoot || IsEmailVerified;
+
+        public bool HasAccessToProject(Guid projectId)
+        {
+            if (IsSuperuser) return true;
+            if (string.IsNullOrEmpty(AllowedProjectIds)) return false;
+            var ids = AllowedProjectIds.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            return ids.Contains(projectId.ToString());
+        }
+    }
 }

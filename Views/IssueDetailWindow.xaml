@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Sleipnir.App.Views"
+        xmlns:utils="clr-namespace:Sleipnir.App.Utils"
         mc:Ignorable="d"
         Title="Sleipnir | Issue Details" Height="600" Width="800"
         Icon="/Resources/sleipnir.ico"
@@ -16,10 +17,10 @@
         </Style>
     </Window.Style>
     <Window.Resources>
-        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        <local:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
-        <local:StringContainsMultiConverter x:Key="StringContainsMultiConverter"/>
+        <utils:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <utils:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <utils:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
+        <utils:StringContainsMultiConverter x:Key="StringContainsMultiConverter"/>
 
         <!-- ComboBox Style for Dark Theme -->
         <Style TargetType="ComboBox">

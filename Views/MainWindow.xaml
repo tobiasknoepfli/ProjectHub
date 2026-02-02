@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Sleipnir.App.Views"
         xmlns:vm="clr-namespace:Sleipnir.App.ViewModels"
+        xmlns:utils="clr-namespace:Sleipnir.App.Utils"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         mc:Ignorable="d"
         Title="Sleipnir" Height="900" Width="1400"
         Icon="/Resources/sleipnir.ico"
@@ -21,14 +23,16 @@
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
-        <local:StringToVisibilityInverseConverter x:Key="StringToVisibilityInverseConverter"/>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <local:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter"/>
-        <local:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
-        <local:MultiplierConverter x:Key="MultiplierConverter"/>
-
+        <utils:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <utils:StringToVisibilityInverseConverter x:Key="StringToVisibilityInverseConverter"/>
+        <utils:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <utils:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <utils:BooleanToVisibilityInverseConverter x:Key="BooleanToVisibilityInverseConverter"/>
+        <utils:BooleanInverseConverter x:Key="BooleanInverseConverter" />
+        <utils:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
+        <utils:MultiplierConverter x:Key="MultiplierConverter"/>
+        <utils:PasswordMaskConverter x:Key="PasswordMaskConverter"/>
+        
         <DataTemplate x:Key="IssueCardTemplate">
             <Border Margin="0,0,0,12" Background="#1C1F30" Padding="15">
                 <Border.InputBindings>
@@ -276,6 +280,7 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/> <!-- Added for Admin Actions and User Profile -->
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,30">
@@ -377,6 +382,40 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+                    </StackPanel>
+
+                    <!-- Admin Actions -->
+                    <StackPanel Grid.Row="4" Margin="0,20,0,0" Visibility="{Binding CurrentUser.IsSuperuser, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="ADMINISTRATION" FontSize="10" FontWeight="Bold" Foreground="#7C4DFF" Margin="5,0,0,10" Opacity="0.6"/>
+                        <Button Command="{Binding ToggleUserManagementCommand}" Style="{StaticResource SidebarButton}" Padding="8,5">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="👥" Margin="0,0,10,0"/>
+                                <TextBlock Text="User Management" FontWeight="Medium"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- User Profile Section -->
+                    <StackPanel Grid.Row="5" VerticalAlignment="Bottom" Margin="0,20,0,0">
+                        <Border Background="#1A1D2E" CornerRadius="10" Padding="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                    <Border Width="40" Height="40" CornerRadius="20" Background="#2A2F45" Margin="0,0,12,0"
+                                            Cursor="Hand" ToolTip="Click to Logout">
+                                        <Border.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick" Command="{Binding ConfirmLogoutCommand}"/>
+                                        </Border.InputBindings>
+                                        <iconPacks:PackIconMaterial Kind="{Binding CurrentUser.Emoji, FallbackValue=Account}" Width="24" Height="24" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    </Border>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding CurrentUser.FullName}" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="{Binding CurrentUser.Username}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -787,7 +826,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Text="{Binding NewProjectLogoUrl, UpdateSourceTrigger=PropertyChanged}" Background="#2A2F45" BorderThickness="0" Padding="10" Foreground="White"/>
                             <Button Grid.Column="1" Command="{Binding BrowseLogoCommand}" Style="{StaticResource SidebarButton}" Content="📁" Width="40" Height="40" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="18" Margin="5,0,0,0" ToolTip="Browse..."/>
-                            <Button Grid.Column="2" Command="{Binding ClearLogoCommand}" Style="{StaticResource SidebarButton}" Content="✕" Width="40" Height="40" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="18" Margin="5,0,0,0" ToolTip="Clear Logo"/>
+                            <Button Grid.Column="2" Command="{Binding ClearLogoCommand}" Style="{StaticResource SidebarButton}" Content="✕" Width="40" Height="40" Padding="0" HorizontalContentAlignment="Center" VerticalAlignment="Center" FontSize="18" Margin="5,0,0,0" ToolTip="Clear Logo"/>
                         </Grid>
                     </StackPanel>
 
@@ -846,6 +885,257 @@
                             <Button Command="{Binding SaveSprintCommand}" Style="{StaticResource AccentButton}" Content="{Binding SprintModalTitle}"/>
                         </StackPanel>
                     </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- User Management Modal -->
+        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsUserManagementVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="3500">
+            <Border Background="#1A1D2E" CornerRadius="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
+                    Width="800" Height="600" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Margin="40">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="USER MANAGEMENT" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="Manage members and permissions" Foreground="#8B949E"/>
+                        </StackPanel>
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                Command="{Binding CreateUserCommand}" Content="+ Add User" Style="{StaticResource AccentButton}" Padding="15,8"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1">
+                        <ItemsControl ItemsSource="{Binding AllUsers}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#1C1F30" Margin="0,0,0,10" Padding="15" CornerRadius="12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="250"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0" VerticalAlignment="Center" Margin="0,0,20,0"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Command="{Binding DataContext.ShowEmojiPickerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding CanEditProtectedFields}"
+                                                    ToolTip="Change Icon">
+                                                <Border Width="64" Height="64" Background="#2A2F45" CornerRadius="15">
+                                                    <iconPacks:PackIconMaterial Kind="{Binding Emoji, FallbackValue=Account}" Width="36" Height="36" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                </Border>
+                                            </Button>
+                                            
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Foreground="White" FontWeight="Bold" FontSize="16" 
+                                                             Background="Transparent" BorderThickness="0" Padding="0"
+                                                             IsEnabled="{Binding CanEditProtectedFields}"
+                                                             Visibility="{Binding CanEditProtectedFields, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <TextBlock Text="{Binding Username}" Foreground="White" FontWeight="Bold" FontSize="16"
+                                                               Visibility="{Binding CanEditProtectedFields, Converter={StaticResource BooleanToVisibilityInverseConverter}}"/>
+                                                    
+                                                    <Border Background="#7C4DFF" Width="20" Height="20" CornerRadius="10" Margin="10,0,0,0" 
+                                                            Visibility="{Binding IsOriginalAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                            ToolTip="Root Superuser">
+                                                        <TextBlock Text="👑" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                                                    </Border>
+
+                                                    <!-- Standard Admin Badge -->
+                                                    <Border Background="#4D7CFF" Width="18" Height="18" CornerRadius="9" Margin="10,0,0,0" 
+                                                            ToolTip="Administrator">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <MultiDataTrigger>
+                                                                        <MultiDataTrigger.Conditions>
+                                                                            <Condition Binding="{Binding IsSuperuser}" Value="True"/>
+                                                                            <Condition Binding="{Binding IsOriginalAdmin}" Value="False"/>
+                                                                        </MultiDataTrigger.Conditions>
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </MultiDataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="🛡" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" Background="#2A2F45" Foreground="White" BorderThickness="0" Padding="5,2" FontSize="11" Margin="0,0,5,0" Tag="First Name"
+                                                             IsEnabled="{Binding CanEditProtectedFields}"/>
+                                                    <TextBox Grid.Column="1" Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" Background="#2A2F45" Foreground="White" BorderThickness="0" Padding="5,2" FontSize="11" Tag="Last Name"
+                                                             IsEnabled="{Binding CanEditProtectedFields}"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="20,0">
+                                                <CheckBox IsChecked="{Binding IsSuperuser}" Content="Is Admin" Foreground="#8B949E" 
+                                                          IsEnabled="{Binding IsOriginalAdmin, Converter={StaticResource BooleanInverseConverter}}"/>
+                                                <CheckBox IsChecked="{Binding CanAutoLogin}" Content="Auto-Login" Foreground="#8B949E" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="10,0">
+                                                <TextBlock Text="Password" FontSize="9" Foreground="#7C4DFF" Margin="0,0,0,2"/>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <TextBox Text="{Binding Password, Converter={StaticResource PasswordMaskConverter}, Mode=OneWay}" 
+                                                             Background="#2A2F45" Foreground="White" BorderThickness="0" Padding="5,2" FontSize="11"
+                                                             IsReadOnly="True" Cursor="Arrow"
+                                                             Visibility="{Binding IsPasswordRevealed, Converter={StaticResource BooleanToVisibilityInverseConverter}}"/>
+                                                    
+                                                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" 
+                                                             Background="#2A2F45" Foreground="White" BorderThickness="0" Padding="5,2" FontSize="11"
+                                                             IsEnabled="{Binding CanEditProtectedFields}"
+                                                             Visibility="{Binding IsPasswordRevealed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                                    <Button Grid.Column="1" Click="TogglePassword_Click" Background="Transparent" BorderThickness="0" Padding="5,0" Cursor="Hand" ToolTip="Reveal/Hide Password">
+                                                        <TextBlock x:Name="EyeIcon" Text="👁" FontSize="12" Foreground="#8B949E">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsPasswordRevealed}" Value="True">
+                                                                            <Setter Property="Text" Value="👁‍🗨"/>
+                                                                            <Setter Property="Foreground" Value="#7C4DFF"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Button>
+                                                </Grid>
+                                                
+                                                <TextBlock Text="Email Address" FontSize="9" Foreground="#7C4DFF" Margin="0,0,0,2"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Text="{Binding PendingEmail, UpdateSourceTrigger=PropertyChanged}" Background="#2A2F45" Foreground="White" BorderThickness="0" Padding="5,2" FontSize="11"/>
+                                                    
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0">
+                                                        <!-- Label for Verified -->
+                                                        <Border Background="#4CAF50" CornerRadius="4" Padding="4,1" Margin="0,0,5,0"
+                                                                Visibility="{Binding IsEmailVerified, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <TextBlock Text="Verified ✓" FontSize="8" Foreground="White" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        
+                                                        <!-- Send Verification Button -->
+                                                        <Button Command="{Binding DataContext.SendVerificationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Content="Send Link" FontSize="9" Padding="5,1" Background="#7C4DFF" Foreground="White" BorderThickness="0"
+                                                                Visibility="{Binding IsEmailVerified, Converter={StaticResource BooleanToVisibilityInverseConverter}}"/>
+
+                                                        <!-- Final Verification Button -->
+                                                        <StackPanel Orientation="Horizontal" Visibility="{Binding IsEmailVerified, Converter={StaticResource BooleanToVisibilityInverseConverter}}">
+                                                            <TextBox Width="70" Text="{Binding DataContext.EnteredOtpCode, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}" 
+                                                                     Background="#1C1F30" Foreground="White" BorderThickness="1" BorderBrush="#7C4DFF" Padding="5,1" FontSize="11" 
+                                                                     Tag="Code" Margin="10,0,5,0" ToolTip="Enter 6-digit code"/>
+                                                            
+                                                            <Button Command="{Binding DataContext.VerifyOtpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Content="Verify" FontSize="9" Padding="8,1" Background="#4CAF50" Foreground="White" BorderThickness="0"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                                                <Button Command="{Binding DataContext.SaveUserCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                        CommandParameter="{Binding}" Margin="0,0,10,0" Style="{StaticResource SidebarButton}" Padding="10,5">
+                                                    <TextBlock Text="Save" FontSize="11"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                        CommandParameter="{Binding}" Style="{StaticResource SidebarButton}" Padding="10,5">
+                                                    <TextBlock Text="✕" Foreground="#FF5252" FontSize="11"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="2" Command="{Binding ToggleUserManagementCommand}" Content="Close" Style="{StaticResource AccentButton}" HorizontalAlignment="Right" Width="120" Margin="0,20,0,0"/>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- Admin Emoji Picker Modal -->
+        <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsAdminEmojiPickerVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="4000">
+            <Border Background="#1C1F30" CornerRadius="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
+                    Width="500" Height="600" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Margin="30">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="SELECT USER ICON" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
+
+                    <TextBox Grid.Row="1" Text="{Binding EmojiSearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                             Background="#0F111A" Foreground="White" BorderThickness="1" BorderBrush="#30363D" 
+                             Padding="12" Margin="0,0,0,15" Tag="Search over 7000 icons..."/>
+
+                    <ListBox Grid.Row="2" ItemsSource="{Binding AvailableEmojis}" SelectedItem="{Binding EditingUserEmoji}" 
+                             Background="Transparent" BorderThickness="0" Padding="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="10"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="40" Height="40" Background="Transparent" ToolTip="{Binding}">
+                                    <iconPacks:PackIconMaterial Kind="{Binding}" Width="24" Height="24" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Margin="2">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#2A2F45"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#7C4DFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                    <Button Grid.Row="3" Command="{Binding CloseAdminEmojiPickerCommand}" Content="Cancel" 
+                            Style="{StaticResource SidebarButton}" HorizontalAlignment="Center" Width="120" Margin="0,20,0,0"/>
                 </Grid>
             </Border>
         </Border>
@@ -923,6 +1213,11 @@
                                             <TextBlock Text="{Binding Name}" FontWeight="Bold" HorizontalAlignment="Center" FontSize="15" 
                                                        TextAlignment="Center" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" 
                                                        MaxHeight="45"/>
+                                            <Button Command="{Binding DataContext.CopyProjectIdCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent" BorderThickness="0" HorizontalAlignment="Center" Margin="0,5,0,0">
+                                                <TextBlock Text="🔗 Copy ID" FontSize="9" Foreground="#7C4DFF" Opacity="0.6"/>
+                                            </Button>
                                         </StackPanel>
                                     </Border>
                                 </Button>

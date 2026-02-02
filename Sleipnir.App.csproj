@@ -12,6 +12,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" NoWarn="NU1701" />
     <PackageReference Include="MahApps.Metro" Version="2.4.11" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="4.11.0" />
     <PackageReference Include="supabase-csharp" Version="0.16.2" />
     <!-- Fixing security vulnerabilities in transitive dependencies -->
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.3.1" />

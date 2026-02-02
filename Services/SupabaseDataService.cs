@@ -110,5 +110,37 @@ namespace Sleipnir.App.Services
             var response = await _client.From<Collaborator>().Get();
             return response.Models ?? new List<Collaborator>();
         }
+
+        public async Task<List<AppUser>> GetUsersAsync()
+        {
+            var response = await _client.From<AppUser>().Get();
+            return response.Models ?? new List<AppUser>();
+        }
+
+        public async Task<AppUser?> GetUserByUsernameAsync(string username)
+        {
+            var response = await _client.From<AppUser>()
+                .Where(x => x.Username == username)
+                .Single();
+            return response;
+        }
+
+        public async Task<AppUser> CreateUserAsync(AppUser user)
+        {
+            var response = await _client.From<AppUser>().Insert(user);
+            return response.Model ?? user;
+        }
+
+        public async Task UpdateUserAsync(AppUser user)
+        {
+            await _client.From<AppUser>().Update(user);
+        }
+
+        public async Task DeleteUserAsync(Guid userId)
+        {
+            await _client.From<AppUser>()
+                .Where(x => x.Id == userId)
+                .Delete();
+        }
     }
 }

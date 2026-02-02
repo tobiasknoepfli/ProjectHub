@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,11 +8,40 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Sleipnir.App.Models;
 using Sleipnir.App.Services;
+using Sleipnir.App.Utils;
+using Sleipnir.App.Views;
 
 namespace Sleipnir.App.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
+        [ObservableProperty]
+        private AppUser? _currentUser;
+        
+        [ObservableProperty]
+        private bool _isUserManagementVisible;
+
+        [ObservableProperty]
+        private bool _isAdminEmojiPickerVisible;
+
+        [ObservableProperty]
+        private string _enteredOtpCode = string.Empty;
+
+        [ObservableProperty]
+        private string _emojiSearchQuery = string.Empty;
+
+        public ObservableCollection<string> AvailableEmojis { get; } = new();
+        private List<IconItem> _allEmojis = new();
+
+        private AppUser? _editingUser;
+        private readonly EmailService _emailService = new();
+
+        [ObservableProperty]
+        private string _editingUserEmoji = string.Empty;
+        
+        [ObservableProperty]
+        private ObservableCollection<AppUser> _allUsers = new();
+
         private readonly IDataService _dataService;
         private List<Issue> _allProjectIssues = new();
 
@@ -58,6 +88,221 @@ namespace Sleipnir.App.ViewModels
         [ObservableProperty]
         private ObservableCollection<Collaborator> _collaborators = new();
         public List<string> Kinds { get; } = new() { "Bug", "Feature", "Patch", "Overhaul", "Alteration" };
+
+        [RelayCommand]
+        private void ConfirmLogout()
+        {
+            if (CustomDialogWindow.Show("LOGOUT", "Are you sure you want to log out? You will need to enter your credentials next time.", CustomDialogWindow.DialogType.Info, "Logout", "Cancel") == CustomDialogWindow.CustomDialogResult.Ok)
+            {
+                LogoutCommand.Execute(null);
+            }
+        }
+
+        [RelayCommand]
+        private async Task Logout()
+        {
+            if (CurrentUser != null)
+            {
+                CurrentUser.CanAutoLogin = false;
+                await _dataService.UpdateUserAsync(CurrentUser);
+            }
+            System.Windows.Application.Current.Shutdown();
+        }
+
+        [RelayCommand]
+        private void ShowEmojiPicker(AppUser user)
+        {
+            _editingUser = user;
+            EditingUserEmoji = user.Emoji;
+            if (_allEmojis.Count == 0) _allEmojis = EmojiHelper.GetAllEmojis();
+            RefreshEmojiList();
+            IsAdminEmojiPickerVisible = true;
+        }
+
+        private void RefreshEmojiList()
+        {
+            AvailableEmojis.Clear();
+            var filtered = string.IsNullOrWhiteSpace(EmojiSearchQuery) 
+                ? _allEmojis 
+                : _allEmojis.Where(e => e.Id.Contains(EmojiSearchQuery, StringComparison.OrdinalIgnoreCase) || e.Name.Contains(EmojiSearchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            foreach (var e in filtered.Take(5000)) AvailableEmojis.Add(e.Id);
+        }
+
+        partial void OnEmojiSearchQueryChanged(string value) => RefreshEmojiList();
+
+        partial void OnEditingUserEmojiChanged(string value)
+        {
+            if (_editingUser != null && !string.IsNullOrEmpty(value))
+            {
+                _editingUser.Emoji = value;
+                IsAdminEmojiPickerVisible = false;
+            }
+        }
+
+        [RelayCommand]
+        private void CloseAdminEmojiPicker() => IsAdminEmojiPickerVisible = false;
+
+        [RelayCommand]
+        private async Task ToggleUserManagement()
+        {
+            if (CurrentUser == null || !CurrentUser.IsSuperuser) return;
+            IsUserManagementVisible = !IsUserManagementVisible;
+            if (IsUserManagementVisible)
+            {
+                var users = await _dataService.GetUsersAsync();
+                AllUsers.Clear();
+                foreach (var u in users) AllUsers.Add(u);
+            }
+        }
+
+        [RelayCommand]
+        private async Task CreateUser()
+        {
+            var newUser = new AppUser
+            {
+                FirstName = "New",
+                LastName = "User",
+                Username = "user_" + Guid.NewGuid().ToString().Substring(0, 4),
+                Password = "password",
+                Emoji = "👤"
+            };
+            await _dataService.CreateUserAsync(newUser);
+            AllUsers.Add(newUser);
+        }
+
+        [RelayCommand]
+        private async Task SendVerification(AppUser user)
+        {
+            if (string.IsNullOrWhiteSpace(user.PendingEmail))
+            {
+                CustomDialogWindow.Show("Input Required", "Please enter an email address first.", CustomDialogWindow.DialogType.Warning);
+                return;
+            }
+
+            // Generate 6-digit OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+            user.VerificationCode = otp;
+            user.IsEmailVerified = false;
+
+            bool success = await _emailService.SendOtpEmailAsync(user.PendingEmail, otp);
+            
+            if (success)
+            {
+                await _dataService.UpdateUserAsync(user);
+                CustomDialogWindow.Show("Verification Sent", $"Verification code sent to {user.PendingEmail}!\n\nPlease check your inbox and enter the code.", CustomDialogWindow.DialogType.Success);
+            }
+            else
+            {
+                CustomDialogWindow.Show("Email Error", "Failed to send email. Ensure you have set your Resend API Key in EmailService.cs", CustomDialogWindow.DialogType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private async Task VerifyOtp(AppUser user)
+        {
+            if (string.IsNullOrEmpty(EnteredOtpCode)) return;
+
+            if (user.VerificationCode == EnteredOtpCode)
+            {
+                user.Email = user.PendingEmail;
+                user.IsEmailVerified = true;
+                user.VerificationCode = string.Empty; // Clear code after use
+                await _dataService.UpdateUserAsync(user);
+                EnteredOtpCode = string.Empty;
+                CustomDialogWindow.Show("Verification Complete", "Email verified successfully! Profile fields are now unlocked.", CustomDialogWindow.DialogType.Success);
+            }
+            else
+            {
+                CustomDialogWindow.Show("Error", "Invalid verification code. Please try again.", CustomDialogWindow.DialogType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private async Task SaveUser(AppUser user)
+        {
+            try 
+            {
+                if (user.IsOriginalAdmin)
+                {
+                    // Fetch fresh state for comparison
+                    var users = await _dataService.GetUsersAsync();
+                    var dbUser = users.FirstOrDefault(u => u.Id == user.Id);
+                    
+                    if (dbUser != null)
+                    {
+                        bool hasProtectedChanges = dbUser.Password != user.Password || 
+                                                  dbUser.Username != user.Username || 
+                                                  dbUser.Emoji != user.Emoji ||
+                                                  dbUser.FirstName != user.FirstName ||
+                                                  dbUser.LastName != user.LastName;
+
+                        if (hasProtectedChanges && !user.IsEmailVerified)
+                        {
+                            CustomDialogWindow.Show("Verification Required", "Profile is locked. You must verify your email address to change Username, Password, Name, or Icon.", CustomDialogWindow.DialogType.Error);
+                            
+                            // Revert protected changes from DB
+                            user.Password = dbUser.Password;
+                            user.Username = dbUser.Username;
+                            user.Emoji = dbUser.Emoji;
+                            user.FirstName = dbUser.FirstName;
+                            user.LastName = dbUser.LastName;
+                            return;
+                        }
+
+                        // If email changed, mark as unverified (Sanitized check)
+                        if (!string.Equals(user.PendingEmail?.Trim(), dbUser.PendingEmail?.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            user.IsEmailVerified = false;
+                        }
+                    }
+                    user.IsSuperuser = true; // Force admin status
+                }
+
+                await _dataService.UpdateUserAsync(user);
+
+                // Sync CurrentUser (sidebar profile) if we just edited ourselves
+                if (CurrentUser != null && CurrentUser.Id == user.Id)
+                {
+                    CurrentUser.Username = user.Username;
+                    CurrentUser.Password = user.Password;
+                    CurrentUser.FirstName = user.FirstName;
+                    CurrentUser.LastName = user.LastName;
+                    CurrentUser.Emoji = user.Emoji;
+                }
+
+                CustomDialogWindow.Show("Success", "User saved successfully!", CustomDialogWindow.DialogType.Success);
+            }
+            catch (Exception ex)
+            {
+                string msg = "Failed to save user changes.\n\nError: " + ex.Message;
+                if (ex.Message.Contains("42703") || ex.Message.Contains("column"))
+                {
+                    msg += "\n\nTip: You likely need to run the SQL script for 'is_root' and 'verification_code' columns and RELOAD the schema in Supabase.";
+                }
+                CustomDialogWindow.Show("Database Error", msg, CustomDialogWindow.DialogType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteUser(AppUser user)
+        {
+            if (user.IsOriginalAdmin)
+            {
+                CustomDialogWindow.Show("Restricted Action", "The original superuser cannot be deleted.", CustomDialogWindow.DialogType.Error);
+                return;
+            }
+            if (user.Id == CurrentUser?.Id) return; // Can't delete self via normal list
+            await _dataService.DeleteUserAsync(user.Id);
+            AllUsers.Remove(user);
+        }
+
+        [RelayCommand]
+        private void CopyProjectId(Project project)
+        {
+            System.Windows.Clipboard.SetText(project.Id.ToString());
+            CustomDialogWindow.Show("Copied", "Project ID copied to clipboard: " + project.Id, CustomDialogWindow.DialogType.Success);
+        }
         public List<string> Priorities { get; } = new() { "Critical", "Very High", "High", "Neutral", "Low", "Very Low", "Nice to Have" };
         public List<string> Statuses { get; } = new() { "Open", "Blocked", "In Progress", "Testing", "Finished" };
 
@@ -222,10 +467,16 @@ namespace Sleipnir.App.ViewModels
             IsLoading = true;
             try
             {
-                var projects = await _dataService.GetProjectsAsync();
+                var allProjects = await _dataService.GetProjectsAsync();
                 Projects.Clear();
-                foreach (var p in projects) Projects.Add(p);
-
+                foreach (var p in allProjects)
+                {
+                    if (CurrentUser != null && CurrentUser.HasAccessToProject(p.Id))
+                    {
+                        Projects.Add(p);
+                    }
+                }
+                
                 var collaborators = await _dataService.GetCollaboratorsAsync();
                 Collaborators.Clear();
                 foreach (var c in collaborators) Collaborators.Add(c);
@@ -586,13 +837,13 @@ namespace Sleipnir.App.ViewModels
         {
             if (SelectedSprint == null || SelectedProject == null) return;
 
-            var result = System.Windows.MessageBox.Show(
+            var result = CustomDialogWindow.Show(
+                "Confirm Delete",
                 $"Are you sure you want to delete {SelectedSprint.Name}? All associated issues will be unassigned.", 
-                "Confirm Delete", 
-                System.Windows.MessageBoxButton.YesNo, 
-                System.Windows.MessageBoxImage.Warning);
+                CustomDialogWindow.DialogType.Warning,
+                "Delete", "Cancel");
 
-            if (result != System.Windows.MessageBoxResult.Yes) return;
+            if (result != CustomDialogWindow.CustomDialogResult.Ok) return;
 
             IsLoading = true;
             try
@@ -649,7 +900,7 @@ namespace Sleipnir.App.ViewModels
         {
             if (SelectedProject == null || string.IsNullOrEmpty(status))
             {
-                if (SelectedProject == null) System.Windows.MessageBox.Show("Please select a project first.");
+                if (SelectedProject == null) CustomDialogWindow.Show("Project Required", "Please select a project first.", CustomDialogWindow.DialogType.Warning);
                 return;
             }
 
@@ -797,7 +1048,7 @@ namespace Sleipnir.App.ViewModels
                 SelectedSprint = Sprints.FirstOrDefault(sp => sp.Id == nextSprint.Id);
                 RefreshCategorizedIssues();
                 
-                System.Windows.MessageBox.Show($"{unfinished.Count} unfinished issues moved to {nextSprint.Name}.", "Sprint Completed");
+                CustomDialogWindow.Show("Sprint Completed", $"{unfinished.Count} unfinished issues moved to {nextSprint.Name}.", CustomDialogWindow.DialogType.Success);
             }
             finally
             {
@@ -868,13 +1119,13 @@ namespace Sleipnir.App.ViewModels
         {
             if (story == null) return;
 
-            var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to permanently delete the story '{story.Description}' AND all its linked backlog issues?", 
-                "Delete Story & Linked Items", 
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning);
+            var result = CustomDialogWindow.Show(
+                "Delete Story", 
+                $"Are you sure you want to permanently delete the story '{story.Description}' AND all its linked backlog issues?",
+                CustomDialogWindow.DialogType.Warning,
+                "Delete Everything", "Keep Story");
 
-            if (result != System.Windows.MessageBoxResult.Yes) return;
+            if (result != CustomDialogWindow.CustomDialogResult.Ok) return;
 
             var oldParentId = story.ParentIssueId;
 
@@ -900,7 +1151,7 @@ namespace Sleipnir.App.ViewModels
             if (issue == null) return;
             var logs = await _dataService.GetLogsAsync(issue.Id);
             string logText = string.Join("\n", logs.Select(l => $"[{l.Timestamp:HH:mm}] {l.UserName}: {l.Action} ({l.Details})"));
-            System.Windows.MessageBox.Show(logText, $"Timeline for: {issue.Description}");
+            CustomDialogWindow.Show("Timeline", logText);
         }
 
         private async Task ArchiveIssueAsync(Issue? issue)
@@ -911,15 +1162,15 @@ namespace Sleipnir.App.ViewModels
             if ((issue.Type == "Idea" || issue.Type == "Story") && issue.Children.Any())
             {
                 var itemPlural = issue.Type == "Idea" ? "stories" : "backlog issues";
-                var result = System.Windows.MessageBox.Show(
-                    $"This {issue.Type} has linked {itemPlural}. Do you want to Archive them as well or Unlink them?\n\nSelect 'Yes' to ARCHIVE linked {itemPlural}.\nSelect 'No' to UNLINK items and keep them in Archive.", 
-                    $"Archive Linked {issue.Type}?", 
-                    System.Windows.MessageBoxButton.YesNoCancel,
-                    System.Windows.MessageBoxImage.Question);
+                var result = CustomDialogWindow.Show(
+                    "Archive Linked Items",
+                    $"This {issue.Type} has linked {itemPlural}. What should happen to them?",
+                    CustomDialogWindow.DialogType.Info,
+                    "Archive All", "Unlink Only", "Cancel");
 
-                if (result == System.Windows.MessageBoxResult.Cancel) return;
+                if (result == CustomDialogWindow.CustomDialogResult.Cancel) return;
 
-                if (result == System.Windows.MessageBoxResult.Yes)
+                if (result == CustomDialogWindow.CustomDialogResult.Ok)
                 {
                     foreach (var child in issue.Children.ToList())
                     {
@@ -927,7 +1178,7 @@ namespace Sleipnir.App.ViewModels
                         await _dataService.UpdateIssueAsync(child);
                     }
                 }
-                else if (result == System.Windows.MessageBoxResult.No)
+                else if (result == CustomDialogWindow.CustomDialogResult.No)
                 {
                     foreach (var child in issue.Children.ToList())
                     {
@@ -951,15 +1202,15 @@ namespace Sleipnir.App.ViewModels
             if ((issue.Type == "Idea" || issue.Type == "Story") && issue.Children.Any())
             {
                 var itemPlural = issue.Type == "Idea" ? "stories" : "backlog issues";
-                var result = System.Windows.MessageBox.Show(
-                    $"This {issue.Type} has linked {itemPlural}. Do you want to DELETE them as well or just UNLINK them?\n\nSelect 'Yes' to DELETE linked {itemPlural}.\nSelect 'No' to UNLINK {itemPlural}.", 
-                    "Delete Linked Items?",
-                    System.Windows.MessageBoxButton.YesNoCancel,
-                    System.Windows.MessageBoxImage.Warning);
+                var result = CustomDialogWindow.Show(
+                    "Delete Linked Items",
+                    $"This {issue.Type} has linked {itemPlural}. What should happen to them?",
+                    CustomDialogWindow.DialogType.Warning,
+                    "Delete All", "Unlink Only", "Cancel");
 
-                if (result == System.Windows.MessageBoxResult.Cancel) return;
+                if (result == CustomDialogWindow.CustomDialogResult.Cancel) return;
 
-                if (result == System.Windows.MessageBoxResult.Yes)
+                if (result == CustomDialogWindow.CustomDialogResult.Ok)
                 {
                     foreach (var child in issue.Children.ToList())
                     {
@@ -967,7 +1218,7 @@ namespace Sleipnir.App.ViewModels
                         _allProjectIssues.Remove(child);
                     }
                 }
-                else if (result == System.Windows.MessageBoxResult.No)
+                else if (result == CustomDialogWindow.CustomDialogResult.No)
                 {
                     foreach (var child in issue.Children.ToList())
                     {
@@ -978,8 +1229,12 @@ namespace Sleipnir.App.ViewModels
             }
             else
             {
-                var confirm = System.Windows.MessageBox.Show($"Are you sure you want to delete '{issue.Description}'?", "Confirm Delete", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
-                if (confirm != System.Windows.MessageBoxResult.Yes) return;
+                var result = CustomDialogWindow.Show(
+                    "Confirm Delete", 
+                    $"Are you sure you want to delete '{issue.Description}'?", 
+                    CustomDialogWindow.DialogType.Warning,
+                    "Delete", "Cancel");
+                if (result != CustomDialogWindow.CustomDialogResult.Ok) return;
             }
 
             await DeleteIssueDirectAsync(issue);

@@ -25,6 +25,13 @@ namespace Sleipnir.App.Services
         Task AddLogAsync(IssueLog log);
 
         Task<List<Collaborator>> GetCollaboratorsAsync();
+
+        // User Management
+        Task<List<AppUser>> GetUsersAsync();
+        Task<AppUser?> GetUserByUsernameAsync(string username);
+        Task<AppUser> CreateUserAsync(AppUser user);
+        Task UpdateUserAsync(AppUser user);
+        Task DeleteUserAsync(Guid userId);
     }
 
     public class MockDataService : IDataService
@@ -34,6 +41,7 @@ namespace Sleipnir.App.Services
         private List<Issue> _issues = new List<Issue>();
         private List<IssueLog> _logs = new List<IssueLog>();
         private List<Collaborator> _collaborators = new List<Collaborator>();
+        private List<AppUser> _users = new List<AppUser>();
 
         public MockDataService()
         {
@@ -124,6 +132,17 @@ namespace Sleipnir.App.Services
             foreach(var issue in _issues) {
                 _logs.Add(new IssueLog { IssueId = issue.Id, Action = "Created", Details = "Initial creation" });
             }
+
+            // Create default admin user
+            _users.Add(new AppUser 
+            { 
+                Username = "admin", 
+                Password = "admin", 
+                FirstName = "Super", 
+                LastName = "User", 
+                IsSuperuser = true, 
+                Emoji = "⚡" 
+            });
         }
 
         public Task<List<Project>> GetProjectsAsync() => Task.FromResult(_projects);
@@ -205,5 +224,29 @@ namespace Sleipnir.App.Services
         }
 
         public Task<List<Collaborator>> GetCollaboratorsAsync() => Task.FromResult(_collaborators);
+
+        public Task<List<AppUser>> GetUsersAsync() => Task.FromResult(_users);
+        
+        public Task<AppUser?> GetUserByUsernameAsync(string username) => 
+            Task.FromResult(_users.FirstOrDefault(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase)));
+
+        public Task<AppUser> CreateUserAsync(AppUser user)
+        {
+            _users.Add(user);
+            return Task.FromResult(user);
+        }
+
+        public Task UpdateUserAsync(AppUser user)
+        {
+            var idx = _users.FindIndex(u => u.Id == user.Id);
+            if (idx >= 0) _users[idx] = user;
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteUserAsync(Guid userId)
+        {
+            _users.RemoveAll(u => u.Id == userId);
+            return Task.CompletedTask;
+        }
     }
 }

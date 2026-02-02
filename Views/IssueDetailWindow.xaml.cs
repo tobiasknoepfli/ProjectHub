@@ -220,18 +220,5 @@ namespace Sleipnir.App.Views
         }
     }
 
-    public class StringContainsMultiConverter : System.Windows.Data.IMultiValueConverter
-    {
-        public object Convert(object[] values, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            if (values == null || values.Length < 2 || values[0] == null || values[1] == null) return false;
-            string list = values[0].ToString() ?? "";
-            string item = values[1].ToString() ?? "";
-            return list.Split(';').Select(s => s.Trim()).Any(u => u.Equals(item, System.StringComparison.OrdinalIgnoreCase));
-        }
-        public object[] ConvertBack(object value, System.Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return null!;
-        }
-    }
+
 }
