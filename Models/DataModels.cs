@@ -341,7 +341,32 @@ namespace Sleipnir.App.Models
         public string Emoji { get => _emoji; set { _emoji = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanEditProtectedFields)); } }
 
         [Column("is_superuser")]
-        public bool IsSuperuser { get => _isSuperuser; set { _isSuperuser = value; OnPropertyChanged(); } }
+        public bool IsSuperuser { get => _isSuperuser; set { _isSuperuser = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasHubAccess)); OnPropertyChanged(nameof(HasPipelineAccess)); OnPropertyChanged(nameof(HasBacklogAccess)); OnPropertyChanged(nameof(HasSettingsAccess)); } }
+
+        [Column("can_access_hub")]
+        public bool CanAccessHub { get => _canAccessHub; set { _canAccessHub = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasHubAccess)); } }
+        private bool _canAccessHub = true;
+
+        [Column("can_access_pipeline")]
+        public bool CanAccessPipeline { get => _canAccessPipeline; set { _canAccessPipeline = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasPipelineAccess)); } }
+        private bool _canAccessPipeline = true;
+
+        [Column("can_access_backlog")]
+        public bool CanAccessBacklog { get => _canAccessBacklog; set { _canAccessBacklog = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasBacklogAccess)); } }
+        private bool _canAccessBacklog = true;
+
+        [Column("can_access_settings")]
+        public bool CanAccessSettings { get => _canAccessSettings; set { _canAccessSettings = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSettingsAccess)); } }
+        private bool _canAccessSettings = true;
+
+        [JsonIgnore]
+        public bool HasHubAccess => IsSuperuser || CanAccessHub;
+        [JsonIgnore]
+        public bool HasPipelineAccess => IsSuperuser || CanAccessPipeline;
+        [JsonIgnore]
+        public bool HasBacklogAccess => IsSuperuser || CanAccessBacklog;
+        [JsonIgnore]
+        public bool HasSettingsAccess => IsSuperuser || CanAccessSettings;
 
         [Column("can_auto_login")]
         public bool CanAutoLogin { get => _canAutoLogin; set { _canAutoLogin = value; OnPropertyChanged(); } }

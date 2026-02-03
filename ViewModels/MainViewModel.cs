@@ -30,6 +30,30 @@ namespace Sleipnir.App.ViewModels
         [ObservableProperty]
         private string _emojiSearchQuery = string.Empty;
 
+        [ObservableProperty]
+        private string _searchQuery = string.Empty;
+
+        [ObservableProperty]
+        private string _selectedTypeFilter = "All";
+        [ObservableProperty]
+        private string _selectedPriorityFilter = "All";
+        [ObservableProperty]
+        private string _selectedAssigneeFilter = "All";
+
+        partial void OnSearchQueryChanged(string value) => RefreshCategorizedIssues();
+        partial void OnSelectedTypeFilterChanged(string value) => RefreshCategorizedIssues();
+        partial void OnSelectedPriorityFilterChanged(string value) => RefreshCategorizedIssues();
+        partial void OnSelectedAssigneeFilterChanged(string value) => RefreshCategorizedIssues();
+
+        [RelayCommand]
+        public void ClearFilters()
+        {
+            SearchQuery = string.Empty;
+            SelectedTypeFilter = "All";
+            SelectedPriorityFilter = "All";
+            SelectedAssigneeFilter = "All";
+        }
+
         public ObservableCollection<string> AvailableEmojis { get; } = new();
         private List<IconItem> _allEmojis = new();
 
@@ -87,7 +111,31 @@ namespace Sleipnir.App.ViewModels
 
         [ObservableProperty]
         private ObservableCollection<Collaborator> _collaborators = new();
-        public List<string> Kinds { get; } = new() { "Bug", "Feature", "Patch", "Overhaul", "Alteration" };
+        public List<string> Kinds { get; } = new() { "Bug", "Feature", "Patch", "Overhaul", "Alteration", "Story", "Idea" };
+        public List<string> FilterKinds { get; }
+
+        public List<string> Priorities { get; } = new() { "Critical", "Very High", "High", "Neutral", "Low", "Very Low", "Nice to Have" };
+        public List<string> FilterPriorities { get; }
+
+        public ObservableCollection<string> FilterAssignees { get; } = new() { "All" };
+
+        partial void OnCollaboratorsChanged(ObservableCollection<Collaborator> value)
+        {
+            UpdateFilterAssignees();
+        }
+
+        private void UpdateFilterAssignees()
+        {
+            FilterAssignees.Clear();
+            FilterAssignees.Add("All");
+            if (Collaborators != null)
+            {
+                foreach (var c in Collaborators.OrderBy(c => c.Name))
+                {
+                    FilterAssignees.Add(c.Name);
+                }
+            }
+        }
 
         [RelayCommand]
         private void ConfirmLogout()
@@ -159,16 +207,53 @@ namespace Sleipnir.App.ViewModels
         [RelayCommand]
         private async Task CreateUser()
         {
-            var newUser = new AppUser
+            try 
             {
-                FirstName = "New",
-                LastName = "User",
-                Username = "user_" + Guid.NewGuid().ToString().Substring(0, 4),
-                Password = "password",
-                Emoji = "👤"
-            };
-            await _dataService.CreateUserAsync(newUser);
-            AllUsers.Add(newUser);
+                var newUser = new AppUser
+                {
+                    FirstName = "New",
+                    LastName = "User",
+                    Username = "user_" + Guid.NewGuid().ToString().Substring(0, 4),
+                    Password = "password",
+                    Emoji = "👤"
+                };
+                await _dataService.CreateUserAsync(newUser);
+                AllUsers.Add(newUser);
+            }
+            catch (Exception ex)
+            {
+                string msg = "Failed to create new user.\n\nError: " + ex.Message;
+                if (ex.Message.Contains("42703") || ex.Message.Contains("column"))
+                {
+                    msg += "\n\nTip: Your database is missing the NEW permission columns. Please run the SQL migration script in Supabase.";
+                }
+                CustomDialogWindow.Show("Database Error", msg, CustomDialogWindow.DialogType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private async Task ToggleProjectAccess(object? parameter)
+        {
+            if (parameter is object[] values && values.Length == 2 && values[0] is AppUser user && values[1] is Project project)
+            {
+                var projectId = project.Id.ToString();
+                var currentIds = (user.AllowedProjectIds ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
+                                                             .Select(s => s.Trim())
+                                                             .Where(s => !string.IsNullOrEmpty(s))
+                                                             .ToList();
+                
+                if (currentIds.Contains(projectId))
+                {
+                    currentIds.Remove(projectId);
+                }
+                else
+                {
+                    currentIds.Add(projectId);
+                }
+                
+                user.AllowedProjectIds = string.Join(";", currentIds);
+                await _dataService.UpdateUserAsync(user);
+            }
         }
 
         [RelayCommand]
@@ -303,7 +388,6 @@ namespace Sleipnir.App.ViewModels
             System.Windows.Clipboard.SetText(project.Id.ToString());
             CustomDialogWindow.Show("Copied", "Project ID copied to clipboard: " + project.Id, CustomDialogWindow.DialogType.Success);
         }
-        public List<string> Priorities { get; } = new() { "Critical", "Very High", "High", "Neutral", "Low", "Very Low", "Nice to Have" };
         public List<string> Statuses { get; } = new() { "Open", "Blocked", "In Progress", "Testing", "Finished" };
 
         [ObservableProperty]
@@ -372,6 +456,8 @@ namespace Sleipnir.App.ViewModels
         public MainViewModel(IDataService dataService)
         {
             _dataService = dataService;
+            FilterKinds = new List<string> { "All" }.Concat(Kinds).ToList();
+            FilterPriorities = new List<string> { "All" }.Concat(Priorities).ToList();
             LoadDataCommand = new AsyncRelayCommand(LoadDataAsync);
             CreateProjectCommand = new RelayCommand(OpenProjectModal);
             CreateIssueCommand = new AsyncRelayCommand<string>(CreateIssueAsync);
@@ -417,6 +503,7 @@ namespace Sleipnir.App.ViewModels
             DeleteChildStoryCommand = new AsyncRelayCommand<Issue>(DeleteChildStoryAsync);
             JumpToIssueCommand = new RelayCommand<object>(JumpToIssue);
             ArchiveIssueCommand = new AsyncRelayCommand<Issue>(ArchiveIssueAsync);
+            OpenUserPermissionsCommand = new RelayCommand<AppUser>(OpenUserPermissions);
         }
 
         public IAsyncRelayCommand LoadDataCommand { get; }
@@ -455,6 +542,7 @@ namespace Sleipnir.App.ViewModels
 
         public IRelayCommand<object> JumpToIssueCommand { get; }
         public IAsyncRelayCommand<Issue> ArchiveIssueCommand { get; }
+        public IRelayCommand<AppUser> OpenUserPermissionsCommand { get; }
         public IRelayCommand ToggleHubArchiveCommand { get; }
         public IRelayCommand TogglePipelineArchiveCommand { get; }
         public IRelayCommand ToggleBacklogArchiveCommand { get; }
@@ -480,6 +568,7 @@ namespace Sleipnir.App.ViewModels
                 var collaborators = await _dataService.GetCollaboratorsAsync();
                 Collaborators.Clear();
                 foreach (var c in collaborators) Collaborators.Add(c);
+                UpdateFilterAssignees();
 
                 if (SelectedProject == null && Projects.Any())
                 {
@@ -538,13 +627,18 @@ namespace Sleipnir.App.ViewModels
             }
         }
 
+
         private void RefreshCategorizedIssues()
         {
-            OpenItems.Clear();
-            InProgressItems.Clear();
-            TestingItems.Clear();
-            FinishedItems.Clear();
-            AllCategoryItems.Clear();
+            try 
+            {
+                OpenItems.Clear();
+                InProgressItems.Clear();
+                TestingItems.Clear();
+                FinishedItems.Clear();
+                AllCategoryItems.Clear();
+
+                if (_allProjectIssues == null) return;
 
             // Clear children on all issues first
             foreach (var issue in _allProjectIssues) issue.Children.Clear();
@@ -664,6 +758,32 @@ namespace Sleipnir.App.ViewModels
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+            {
+                filtered = filtered.Where(i => 
+                    (i.Description?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (i.LongDescription?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (i.IssueNumber?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (i.IdeaNumber?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (i.StoryNumber?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (i.ResponsibleUsers?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                ).ToList();
+            }
+
+            // Apply Specific Filters
+            if (!string.IsNullOrEmpty(SelectedTypeFilter) && SelectedTypeFilter != "All")
+            {
+                filtered = filtered.Where(i => i.Type == SelectedTypeFilter).ToList();
+            }
+            if (!string.IsNullOrEmpty(SelectedPriorityFilter) && SelectedPriorityFilter != "All")
+            {
+                filtered = filtered.Where(i => i.Priority == SelectedPriorityFilter).ToList();
+            }
+            if (!string.IsNullOrEmpty(SelectedAssigneeFilter) && SelectedAssigneeFilter != "All")
+            {
+                filtered = filtered.Where(i => i.ResponsibleUsers?.Contains(SelectedAssigneeFilter, StringComparison.OrdinalIgnoreCase) ?? false).ToList();
+            }
+
             foreach (var issue in filtered)
             {
                 AllCategoryItems.Add(issue);
@@ -675,6 +795,11 @@ namespace Sleipnir.App.ViewModels
                     case "finished": FinishedItems.Add(issue); break;
                     default: OpenItems.Add(issue); break;
                 }
+            }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("RefreshCategorizedIssues Error: " + ex.Message);
             }
         }
 
@@ -694,6 +819,14 @@ namespace Sleipnir.App.ViewModels
             if (issue == null) return;
             var window = new Sleipnir.App.Views.IssueDetailWindow(issue, this);
             window.Show();
+        }
+
+        private void OpenUserPermissions(AppUser? user)
+        {
+            if (user == null) return;
+            var window = new Sleipnir.App.Views.UserPermissionsWindow(user, this);
+            window.Owner = Application.Current.MainWindow;
+            window.ShowDialog();
         }
 
         private void JumpToIssue(object? param)

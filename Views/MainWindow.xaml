@@ -32,6 +32,8 @@
         <utils:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
         <utils:MultiplierConverter x:Key="MultiplierConverter"/>
         <utils:PasswordMaskConverter x:Key="PasswordMaskConverter"/>
+        <utils:StringContainsMultiConverter x:Key="StringContainsMultiConverter"/>
+        <utils:MultiSelectionConverter x:Key="MultiSelectionConverter"/>
         
         <DataTemplate x:Key="IssueCardTemplate">
             <Border Margin="0,0,0,12" Background="#1C1F30" Padding="15">
@@ -319,7 +321,8 @@
                     </Button>
 
                     <!-- Main Navigation Scroll Area -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0"
+                                  Visibility="{Binding CurrentUser.HasBacklogAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel>
                             <TextBlock Text="PLANNING" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="5,0,0,10" Opacity="0.6"/>
                             
@@ -353,14 +356,16 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
-                            <Button Command="{Binding OpenSprintModalCommand}" Style="{StaticResource SidebarButton}" Margin="0,5,0,0" Padding="8,5">
+                            <Button Command="{Binding OpenSprintModalCommand}" Style="{StaticResource SidebarButton}" Margin="0,5,0,0" Padding="8,5"
+                                    Visibility="{Binding CurrentUser.HasSettingsAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                                  <TextBlock Text="+ Add Sprint" FontSize="11"/>
                             </Button>
                         </StackPanel>
                     </ScrollViewer>
 
                     <!-- Bottom Actions (Archive) -->
-                    <StackPanel Grid.Row="3" Margin="0,20,0,0">
+                    <StackPanel Grid.Row="3" Margin="0,20,0,0"
+                                Visibility="{Binding CurrentUser.HasBacklogAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Button Command="{Binding ToggleArchiveCommand}" Style="{StaticResource SidebarButton}" Padding="8,5">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📁" Margin="0,0,10,0"/>
@@ -385,7 +390,7 @@
                     </StackPanel>
 
                     <!-- Admin Actions -->
-                    <StackPanel Grid.Row="4" Margin="0,20,0,0" Visibility="{Binding CurrentUser.IsSuperuser, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Grid.Row="4" Margin="0,20,0,0" Visibility="{Binding CurrentUser.HasSettingsAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBlock Text="ADMINISTRATION" FontSize="10" FontWeight="Bold" Foreground="#7C4DFF" Margin="5,0,0,10" Opacity="0.6"/>
                         <Button Command="{Binding ToggleUserManagementCommand}" Style="{StaticResource SidebarButton}" Padding="8,5">
                             <StackPanel Orientation="Horizontal">
@@ -410,8 +415,16 @@
                                         </Border.InputBindings>
                                         <iconPacks:PackIconMaterial Kind="{Binding CurrentUser.Emoji, FallbackValue=Account}" Width="24" Height="24" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                     </Border>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{Binding CurrentUser.FullName}" FontWeight="SemiBold" Foreground="White"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding CurrentUser.FullName}" FontWeight="SemiBold" Foreground="White"
+                                                   MaxWidth="130" TextTrimming="CharacterEllipsis"/>
+                                        <Border Background="#7C4DFF" Width="16" Height="16" CornerRadius="8" Margin="8,0,0,0" 
+                                                Visibility="{Binding CurrentUser.IsSuperuser, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                ToolTip="Superuser Account">
+                                            <TextBlock Text="👑" FontSize="9" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                                        </Border>
+                                    </StackPanel>
                                     <TextBlock Text="{Binding CurrentUser.Username}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
                                 </StackPanel>
                             </Grid>
@@ -432,7 +445,8 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding SelectedProject.Name, FallbackValue='Select Project'}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"/>
-                            <Button Command="{Binding EditProjectModalCommand}" Style="{StaticResource WindowControlButton}" Width="20" Height="20" Margin="5,0,0,0" Padding="0">
+                            <Button Command="{Binding EditProjectModalCommand}" Style="{StaticResource WindowControlButton}" Width="20" Height="20" Margin="5,0,0,0" Padding="0"
+                                    Visibility="{Binding CurrentUser.HasSettingsAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="✎" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
                             <TextBlock Text=" • " FontSize="12" Foreground="{StaticResource BorderBrush}" Margin="5,0"/>
@@ -449,25 +463,92 @@
                                 <TextBlock Text="{Binding SelectedSprint.EndDate, StringFormat='{}{0:dd.MM.yyyy}'}" 
                                            FontSize="16" Foreground="{StaticResource TextMutedBrush}"/>
                             </StackPanel>
-                            <Button Command="{Binding EditSprintModalCommand}" Style="{StaticResource WindowControlButton}" Width="25" Height="25" Margin="10,5,0,0" Padding="0"
-                                    Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}">
+                            <Button Command="{Binding EditSprintModalCommand}" Width="25" Height="25" Margin="10,5,0,0" Padding="0">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible"/>
+                                                    <Condition Binding="{Binding CurrentUser.HasSettingsAccess}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <TextBlock Text="✎" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
                         </StackPanel>
                     </StackPanel>
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                         <Button Command="{Binding CompleteSprintCommand}" Style="{StaticResource AccentButton}" Margin="0,0,15,0"
-                                Visibility="{Binding CanCompleteSelectedSprint, Converter={StaticResource BooleanToVisibilityConverter}}">
+                         <Button Command="{Binding CompleteSprintCommand}" Margin="0,0,15,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource AccentButton}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding CanCompleteSelectedSprint}" Value="True"/>
+                                                <Condition Binding="{Binding CurrentUser.HasSettingsAccess}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <TextBlock Text="Complete Sprint √" Foreground="White" FontWeight="Bold"/>
                         </Button>
 
-                        <Border CornerRadius="20" Background="#2A2F45" Padding="15,8" Margin="0,0,10,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="S" Margin="0,0,10,0"/>
-                                <TextBlock Text="Search items..." Foreground="{StaticResource TextMutedBrush}"/>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Search -->
+                            <Border CornerRadius="20" Background="#2A2F45" Padding="15,4" Margin="0,0,10,0" Width="200">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="🔍" VerticalAlignment="Center" Margin="0,0,10,0" Opacity="0.5" FontSize="12"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="Transparent" BorderThickness="0" Foreground="White"
+                                             VerticalAlignment="Center" FontSize="12" CaretBrush="White">
+                                        <TextBox.Template>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Grid>
+                                                    <TextBlock Text="Search..." Foreground="{StaticResource TextMutedBrush}" Opacity="0.5"
+                                                               Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=''}"
+                                                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                                    <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </TextBox.Template>
+                                    </TextBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Type Filter -->
+                            <ComboBox ItemsSource="{Binding FilterKinds}" SelectedValue="{Binding SelectedTypeFilter}" 
+                                      Style="{StaticResource FlatComboBoxStyle}" Width="110" Margin="0,0,10,0" 
+                                      ToolTip="Filter by Type"/>
+
+                            <!-- Priority Filter -->
+                            <ComboBox ItemsSource="{Binding FilterPriorities}" SelectedValue="{Binding SelectedPriorityFilter}" 
+                                      Style="{StaticResource FlatComboBoxStyle}" Width="120" Margin="0,0,10,0"
+                                      ToolTip="Filter by Priority"/>
+
+                            <!-- Assignee Filter -->
+                            <ComboBox ItemsSource="{Binding FilterAssignees}" SelectedValue="{Binding SelectedAssigneeFilter}" 
+                                      Style="{StaticResource FlatComboBoxStyle}" Width="140" Margin="0,0,10,0"
+                                      ToolTip="Filter by Assignee"/>
+
+                            <!-- Clear -->
+                            <Button Command="{Binding ClearFiltersCommand}" Style="{StaticResource WindowControlButton}" 
+                                    Width="32" Height="32" Padding="0" ToolTip="Clear All Filters">
+                                <iconPacks:PackIconMaterial Kind="FilterRemove" Width="14" Height="14" Foreground="#FF5252"/>
+                            </Button>
+                        </StackPanel>
 
 
                     </StackPanel>
@@ -476,7 +557,7 @@
                 <TabControl Grid.Row="1" Margin="0,0,0,20" 
                             SelectedValue="{Binding SelectedCategory, Mode=TwoWay}"
                             SelectedValuePath="Tag">
-                    <TabItem Tag="Backlog">
+                    <TabItem Tag="Backlog" Visibility="{Binding CurrentUser.HasBacklogAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="B "/>
@@ -495,7 +576,21 @@
                             </StackPanel>
                         </TabItem.Header>
                     </TabItem>
-                    <TabItem Tag="Pipeline" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
+                    <TabItem Tag="Pipeline">
+                        <TabItem.Style>
+                            <Style TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding CurrentUser.HasPipelineAccess}" Value="True"/>
+                                            <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}" Value="Visible"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TabItem.Style>
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="P "/>
@@ -503,7 +598,21 @@
                             </StackPanel>
                         </TabItem.Header>
                     </TabItem>
-                    <TabItem Tag="Hub" Visibility="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}">
+                    <TabItem Tag="Hub">
+                        <TabItem.Style>
+                            <Style TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding CurrentUser.HasHubAccess}" Value="True"/>
+                                            <Condition Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}" Value="Visible"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TabItem.Style>
                         <TabItem.Header>
                             <StackPanel Orientation="Horizontal" AllowDrop="True" Drop="TabItem_Drop" Background="Transparent" VerticalAlignment="Stretch">
                                 <TextBlock Text="H "/>
@@ -892,7 +1001,7 @@
         <!-- User Management Modal -->
         <Border Grid.RowSpan="2" Background="#CC000000" Visibility="{Binding IsUserManagementVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="3500">
             <Border Background="#1A1D2E" CornerRadius="15" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
-                    Width="800" Height="600" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    Width="1000" Height="650" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid Margin="40">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -917,9 +1026,10 @@
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="1*"/>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="250"/>
+                                                <ColumnDefinition Width="200"/>
+                                                <ColumnDefinition Width="220"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
@@ -934,41 +1044,47 @@
                                                 </Border>
                                             </Button>
                                             
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Foreground="White" FontWeight="Bold" FontSize="16" 
+                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <Grid Margin="0,0,0,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Grid.Column="0" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Foreground="White" FontWeight="Bold" FontSize="16" 
                                                              Background="Transparent" BorderThickness="0" Padding="0"
                                                              IsEnabled="{Binding CanEditProtectedFields}"
                                                              Visibility="{Binding CanEditProtectedFields, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                                    <TextBlock Text="{Binding Username}" Foreground="White" FontWeight="Bold" FontSize="16"
+                                                    <TextBlock Grid.Column="0" Text="{Binding Username}" Foreground="White" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis"
                                                                Visibility="{Binding CanEditProtectedFields, Converter={StaticResource BooleanToVisibilityInverseConverter}}"/>
                                                     
-                                                    <Border Background="#7C4DFF" Width="20" Height="20" CornerRadius="10" Margin="10,0,0,0" 
-                                                            Visibility="{Binding IsOriginalAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                            ToolTip="Root Superuser">
-                                                        <TextBlock Text="👑" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
-                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Border Background="#7C4DFF" Width="22" Height="22" CornerRadius="11" Margin="10,0,0,0" 
+                                                                Visibility="{Binding IsOriginalAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                ToolTip="Root Superuser">
+                                                            <TextBlock Text="👑" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                                                        </Border>
 
-                                                    <!-- Standard Admin Badge -->
-                                                    <Border Background="#4D7CFF" Width="18" Height="18" CornerRadius="9" Margin="10,0,0,0" 
-                                                            ToolTip="Administrator">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <MultiDataTrigger>
-                                                                        <MultiDataTrigger.Conditions>
-                                                                            <Condition Binding="{Binding IsSuperuser}" Value="True"/>
-                                                                            <Condition Binding="{Binding IsOriginalAdmin}" Value="False"/>
-                                                                        </MultiDataTrigger.Conditions>
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </MultiDataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                        <TextBlock Text="🛡" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
-                                                    </Border>
-                                                </StackPanel>
+                                                        <!-- Standard Admin Badge -->
+                                                        <Border Background="#4D7CFF" Width="20" Height="20" CornerRadius="10" Margin="10,0,0,0" 
+                                                                ToolTip="Administrator">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <MultiDataTrigger>
+                                                                            <MultiDataTrigger.Conditions>
+                                                                                <Condition Binding="{Binding IsSuperuser}" Value="True"/>
+                                                                                <Condition Binding="{Binding IsOriginalAdmin}" Value="False"/>
+                                                                            </MultiDataTrigger.Conditions>
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </MultiDataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="🛡" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Grid>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -981,11 +1097,15 @@
                                                 </Grid>
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="20,0">
-                                                <CheckBox IsChecked="{Binding IsSuperuser}" Content="Is Admin" Foreground="#8B949E" 
-                                                          IsEnabled="{Binding IsOriginalAdmin, Converter={StaticResource BooleanInverseConverter}}"/>
-                                                <CheckBox IsChecked="{Binding CanAutoLogin}" Content="Auto-Login" Foreground="#8B949E" />
-                                            </StackPanel>
+                                             <Button Grid.Column="2" 
+                                                    Command="{Binding DataContext.OpenUserPermissionsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource SidebarButton}" VerticalAlignment="Center" Padding="15,10" Margin="10,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <iconPacks:PackIconMaterial Kind="ShieldAccount" Width="16" Height="16" Foreground="#7C4DFF" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Edit Rights" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </Button>
 
                                             <StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="10,0">
                                                 <TextBlock Text="Password" FontSize="9" Foreground="#7C4DFF" Margin="0,0,0,2"/>
@@ -1056,7 +1176,10 @@
                                                 </Grid>
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                                             <!-- Project Access moved to Edit Rights window -->
+                                             <Border Grid.Column="4"/>
+
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
                                                 <Button Command="{Binding DataContext.SaveUserCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                                                         CommandParameter="{Binding}" Margin="0,0,10,0" Style="{StaticResource SidebarButton}" Padding="10,5">
                                                     <TextBlock Text="Save" FontSize="11"/>
