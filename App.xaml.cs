@@ -76,7 +76,7 @@ namespace Sleipnir.App
             {
                 ShowMainWindow(dataService, loginVm.AuthenticatedUser!);
                 // Revert to normal shutdown mode
-                this.ShutdownMode = ShutdownMode.OnLastWindowClose;
+                this.ShutdownMode = ShutdownMode.OnMainWindowClose;
             }
             else
             {

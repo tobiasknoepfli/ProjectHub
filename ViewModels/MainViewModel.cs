@@ -603,6 +603,7 @@ namespace Sleipnir.App.ViewModels
             if (SelectedProject == null) return;
 
             IsLoading = true;
+            _isDataSyncing = true;
             try
             {
                 var sprintsTask = _dataService.GetSprintsAsync(SelectedProject.Id);
@@ -628,6 +629,7 @@ namespace Sleipnir.App.ViewModels
             }
             finally
             {
+                _isDataSyncing = false;
                 IsLoading = false;
             }
         }
@@ -1067,9 +1069,11 @@ namespace Sleipnir.App.ViewModels
             }
         }
 
+        private bool _isDataSyncing;
+
         public async Task UpdateIssueAsync(Issue issue)
         {
-            if (issue == null) return;
+            if (issue == null || _isDataSyncing) return;
             IsLoading = true;
             try
             {
@@ -1082,6 +1086,14 @@ namespace Sleipnir.App.ViewModels
                 }
 
                 RefreshCategorizedIssues();
+            }
+            catch (Exception ex)
+            {
+                string msg = $"Failed to update issue: {ex.Message}";
+                if (ex.Message.Contains("42703") || ex.Message.Contains("column"))
+                    msg += "\n\nTip: Database schema mismatch. Please run the SQL migration script.";
+                
+                CustomDialogWindow.Show("Error", msg, CustomDialogWindow.DialogType.Error);
             }
             finally
             {
@@ -1097,74 +1109,119 @@ namespace Sleipnir.App.ViewModels
                 return;
             }
 
-            // If creating an epic, make sure we show the active Hub (not archive)
-            if (SelectedCategory == "Hub")
+            IsLoading = true;
+            try 
             {
-                ShowHubArchive = false;
+                // If creating an epic, make sure we show the active Hub (not archive)
+                if (SelectedCategory == "Hub")
+                {
+                    ShowHubArchive = false;
+                }
+
+                var issue = new Issue
+                {
+                    ProjectId = SelectedProject.Id,
+                    ProgramComponent = "",
+                    Description = "Descriptive Title",
+                    Category = SelectedCategory,
+                    Status = status,
+                    Type = SelectedCategory == "Hub" ? "Epic" : (SelectedCategory == "Pipeline" ? "Story" : "Bug"),
+                    SprintId = (SelectedCategory == "Backlog") ? SelectedSprint?.Id : null
+                };
+
+                var created = await _dataService.CreateIssueAsync(issue);
+                if (created != null)
+                {
+                    _allProjectIssues.Add(created);
+                    RefreshCategorizedIssues();
+                    OpenIssueDetail(created);
+                }
             }
-
-            var issue = new Issue
+            catch (Exception ex)
             {
-                ProjectId = SelectedProject.Id,
-                ProgramComponent = "",
-                Description = "Descriptive Title",
-                Category = SelectedCategory,
-                Status = status,
-                Type = SelectedCategory == "Hub" ? "Epic" : (SelectedCategory == "Pipeline" ? "Story" : "Bug"),
-                SprintId = (SelectedCategory == "Backlog") ? SelectedSprint?.Id : null
-            };
-
-            await _dataService.CreateIssueAsync(issue);
-            _allProjectIssues.Add(issue);
-            RefreshCategorizedIssues();
-
-            OpenIssueDetail(issue);
+                string msg = $"Failed to create issue: {ex.Message}";
+                if (ex.Message.Contains("42703") || ex.Message.Contains("column"))
+                    msg += "\n\nTip: Database schema mismatch. Please run the SQL migration script.";
+                
+                CustomDialogWindow.Show("Database Error", msg, CustomDialogWindow.DialogType.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task AddStoryAsync(Issue? epic)
         {
             if (epic == null || SelectedProject == null) return;
 
-            var story = new Issue
+            IsLoading = true;
+            try 
             {
-                ProjectId = SelectedProject.Id,
-                ParentIssueId = epic.Id,
-                ProgramComponent = epic.ProgramComponent,
-                Description = "Descriptive Title",
-                Category = "Pipeline",
-                Type = "Story",
-                Status = "Open",
-                SprintId = null
-            };
+                var story = new Issue
+                {
+                    ProjectId = SelectedProject.Id,
+                    ParentIssueId = epic.Id,
+                    ProgramComponent = epic.ProgramComponent,
+                    Description = "New Story",
+                    Category = "Pipeline",
+                    Type = "Story",
+                    Status = "Open",
+                    SprintId = null
+                };
 
-            await _dataService.CreateIssueAsync(story);
-            _allProjectIssues.Add(story);
-            RefreshCategorizedIssues();
-            
-            // Open immediately for editing
-            OpenIssueDetail(story);
+                var created = await _dataService.CreateIssueAsync(story);
+                if (created != null)
+                {
+                    _allProjectIssues.Add(created);
+                    RefreshCategorizedIssues();
+                    OpenIssueDetail(created);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomDialogWindow.Show("Error", $"Failed to created story: {ex.Message}", CustomDialogWindow.DialogType.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task AddChildIssueAsync(Issue? story)
         {
             if (story == null || SelectedProject == null) return;
 
-            var issue = new Issue
+            IsLoading = true;
+            try 
             {
-                ProjectId = SelectedProject.Id,
-                ParentIssueId = story.Id,
-                ProgramComponent = story.ProgramComponent,
-                Description = "Descriptive Title",
-                Category = "Backlog",
-                Type = "Bug",
-                Status = "Open"
-            };
+                var issue = new Issue
+                {
+                    ProjectId = SelectedProject.Id,
+                    ParentIssueId = story.Id,
+                    ProgramComponent = story.ProgramComponent,
+                    Description = "New Issue",
+                    Category = "Backlog",
+                    Type = "Bug",
+                    Status = "Open"
+                };
 
-            await _dataService.CreateIssueAsync(issue);
-            _allProjectIssues.Add(issue);
-            RefreshCategorizedIssues();
-
-            OpenIssueDetail(issue);
+                var created = await _dataService.CreateIssueAsync(issue);
+                if (created != null)
+                {
+                    _allProjectIssues.Add(created);
+                    RefreshCategorizedIssues();
+                    OpenIssueDetail(created);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomDialogWindow.Show("Error", $"Failed to created issue: {ex.Message}", CustomDialogWindow.DialogType.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task AssignToSpecificSprintAsync(Sprint? sprint)
