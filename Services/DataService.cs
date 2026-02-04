@@ -10,6 +10,7 @@ namespace Sleipnir.App.Services
         Task<List<Project>> GetProjectsAsync();
         Task<Project> CreateProjectAsync(string name, string description, string? logoUrl = null);
         Task UpdateProjectAsync(Project project);
+        Task DeleteProjectAsync(Guid projectId);
         
         Task<List<Sprint>> GetSprintsAsync(Guid projectId);
         Task<Sprint> CreateSprintAsync(Sprint sprint);
@@ -158,6 +159,14 @@ namespace Sleipnir.App.Services
         {
             var idx = _projects.FindIndex(p => p.Id == project.Id);
             if (idx >= 0) _projects[idx] = project;
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteProjectAsync(Guid projectId)
+        {
+            _projects.RemoveAll(p => p.Id == projectId);
+            _sprints.RemoveAll(s => s.ProjectId == projectId);
+            _issues.RemoveAll(i => i.ProjectId == projectId);
             return Task.CompletedTask;
         }
 

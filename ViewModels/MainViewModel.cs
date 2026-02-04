@@ -574,6 +574,10 @@ namespace Sleipnir.App.ViewModels
                 {
                     SelectedProject = Projects.First();
                 }
+                else if (!Projects.Any())
+                {
+                    OpenProjectModal();
+                }
             }
             finally
             {
@@ -851,6 +855,29 @@ namespace Sleipnir.App.ViewModels
             NewProjectLogoUrl = SelectedProject.LogoUrl ?? "";
             IsProjectSelectorVisible = false;
             IsProjectModalVisible = true;
+        }
+
+        [RelayCommand]
+        private async Task DeleteProject()
+        {
+            if (SelectedProject == null) return;
+
+            if (CustomDialogWindow.Show("DELETE PROJECT", $"Are you sure you want to permanently delete the project '{SelectedProject.Name}'? This will also delete all its sprints and issues. This action cannot be undone.", CustomDialogWindow.DialogType.Warning, "Delete", "Cancel") == CustomDialogWindow.CustomDialogResult.Ok)
+            {
+                await _dataService.DeleteProjectAsync(SelectedProject.Id);
+                var projectToRemove = SelectedProject;
+                Projects.Remove(projectToRemove);
+                
+                if (Projects.Any())
+                {
+                    SelectedProject = Projects.First();
+                }
+                else
+                {
+                    SelectedProject = null;
+                    OpenProjectModal();
+                }
+            }
         }
 
         private async Task SaveProjectAsync()

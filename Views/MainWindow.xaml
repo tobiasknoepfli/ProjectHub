@@ -449,6 +449,10 @@
                                     Visibility="{Binding CurrentUser.HasSettingsAccess, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Text="✎" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
+                            <Button Command="{Binding DeleteProjectCommand}" Style="{StaticResource WindowControlButton}" Width="20" Height="20" Margin="5,0,0,0" Padding="0"
+                                    Visibility="{Binding CurrentUser.IsSuperuser, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <iconPacks:PackIconMaterial Kind="TrashCan" Width="10" Height="10" Foreground="#FF5252"/>
+                            </Button>
                             <TextBlock Text=" • " FontSize="12" Foreground="{StaticResource BorderBrush}" Margin="5,0"/>
                             <TextBlock Text="{Binding SelectedProject.Description, FallbackValue='...'}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
                         </StackPanel>

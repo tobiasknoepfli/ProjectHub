@@ -40,6 +40,13 @@ namespace Sleipnir.App.Services
             await _client.From<Project>().Update(project);
         }
 
+        public async Task DeleteProjectAsync(Guid projectId)
+        {
+            await _client.From<Project>()
+                .Where(x => x.Id == projectId)
+                .Delete();
+        }
+
         public async Task<List<Sprint>> GetSprintsAsync(Guid projectId)
         {
             var response = await _client.From<Sprint>()
