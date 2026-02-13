@@ -670,6 +670,21 @@
                                 </Button.Style>
                                 <TextBlock Text="✎" FontSize="14" Foreground="{StaticResource TextMutedBrush}"/>
                             </Button>
+
+                            <Button Command="{Binding ShowSprintTimelineCommand}" CommandParameter="{Binding SelectedSprint}"
+                                    Width="30" Height="30" Margin="10,5,0,0" Padding="0" ToolTip="Show Progress Timeline">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedSprint, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <iconPacks:PackIconMaterial Kind="ChartLine" Width="16" Height="16" Foreground="#4CAF50"/>
+                            </Button>
                         </StackPanel>
                     </StackPanel>
                     

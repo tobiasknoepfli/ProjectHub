@@ -1,0 +1,137 @@
+<Window x:Class="Sleipnir.App.Views.SprintTimelineWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        mc:Ignorable="d"
+        Title="Sprint Timeline" Height="650" Width="950"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F111A" Foreground="White"
+        WindowStyle="None" AllowsTransparency="False">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" 
+                      ResizeBorderThickness="5" 
+                      GlassFrameThickness="0" 
+                      CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+    <Window.Resources>
+        <Style x:Key="ScaleToggleStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="#2A2F45"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4" Padding="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+ 
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="#141724" Height="32" BorderBrush="#30363D" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                    <iconPacks:PackIconMaterial Kind="ChartLine" Width="16" Height="16" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="SPRINT TIMELINE" VerticalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="SprintTitleText" Text=" - Sprint Progress" VerticalAlignment="Center" FontSize="11" Foreground="#8B949E" Margin="5,0,0,0"/>
+                    <TextBlock x:Name="SprintDateText" VerticalAlignment="Center" FontSize="10" Foreground="#6E7681" Margin="10,1,0,0" Opacity="0.8"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <RadioButton x:Name="DaysRadio" Style="{StaticResource ScaleToggleStyle}" 
+                                 Content="DAYS" Width="50" Height="22" IsChecked="True" 
+                                 Checked="Scale_Checked"/>
+                    <RadioButton x:Name="HoursRadio" Style="{StaticResource ScaleToggleStyle}" 
+                                 Content="HOURS" Width="50" Height="22" Margin="5,0,0,0"
+                                 Checked="Scale_Checked"/>
+                    <RadioButton x:Name="MinutesRadio" Style="{StaticResource ScaleToggleStyle}" 
+                                 Content="MINUTES" Width="55" Height="22" Margin="5,0,0,0"
+                                 Checked="Scale_Checked"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="—" Style="{StaticResource WindowControlButton}" Click="Minimize_Click"/>
+                    <Button Content="▢" Style="{StaticResource WindowControlButton}" Click="Maximize_Click"/>
+                    <Button Content="✕" Style="{StaticResource WindowCloseButton}" Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Filter Bar -->
+        <Border Grid.Row="1" Background="#1C1F2B" Padding="15,12" BorderBrush="#30363D" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="FROM" VerticalAlignment="Center" Foreground="#8B949E" FontSize="10" FontWeight="Bold" Margin="0,0,10,0"/>
+                <DatePicker x:Name="FromDate" Width="120" Height="30" SelectedDateChanged="Filter_Changed" VerticalAlignment="Center"/>
+                <TextBox x:Name="FromTime" Text="00:00" Width="50" Height="30" Margin="5,0,20,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Filter_Changed" Background="#262B3D" Foreground="White" BorderBrush="#30363D"/>
+
+                <TextBlock Text="TO" VerticalAlignment="Center" Foreground="#8B949E" FontSize="10" FontWeight="Bold" Margin="0,0,10,0"/>
+                <DatePicker x:Name="ToDate" Width="120" Height="30" SelectedDateChanged="Filter_Changed" VerticalAlignment="Center"/>
+                <TextBox x:Name="ToTime" Text="23:59" Width="50" Height="30" Margin="5,0,10,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Filter_Changed" Background="#262B3D" Foreground="White" BorderBrush="#30363D"/>
+                
+                <Button Content="REFRESH" Click="Refresh_Click" Style="{StaticResource SidebarButton}" Height="30" Padding="15,0" Margin="10,0,0,0" FontSize="10"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Border BorderBrush="#30363D" BorderThickness="1,0,0,1">
+                <Canvas x:Name="ChartCanvas" Margin="10,10,10,30">
+                    <!-- Y Axis Labels will be added in code behind -->
+                    <!-- X Axis Labels will be added in code behind -->
+                </Canvas>
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,5">
+            <StackPanel Orientation="Horizontal" Margin="15,0">
+                <Rectangle Width="14" Height="14" Fill="#FF5252" Margin="0,0,8,0" RadiusX="2" RadiusY="2"/>
+                <TextBlock Text="OPEN" FontSize="11" FontWeight="Bold" Foreground="#8B949E" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="15,0">
+                <Rectangle Width="14" Height="14" Fill="#FFD740" Margin="0,0,8,0" RadiusX="2" RadiusY="2"/>
+                <TextBlock Text="IN PROGRESS" FontSize="11" FontWeight="Bold" Foreground="#8B949E" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="15,0">
+                <Rectangle Width="14" Height="14" Fill="#4D7CFF" Margin="0,0,8,0" RadiusX="2" RadiusY="2"/>
+                <TextBlock Text="TESTING" FontSize="11" FontWeight="Bold" Foreground="#8B949E" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="15,0">
+                <Rectangle Width="14" Height="14" Fill="#4CAF50" Margin="0,0,8,0" RadiusX="2" RadiusY="2"/>
+                <TextBlock Text="DONE" FontSize="11" FontWeight="Bold" Foreground="#8B949E" VerticalAlignment="Center"/>
+            </StackPanel>
+        </StackPanel>
+        
+        <TextBlock x:Name="LoadingText" Grid.Row="2" Text="Processing Activity Logs..." 
+                   VerticalAlignment="Center" HorizontalAlignment="Center" 
+                   FontSize="16" Foreground="{StaticResource AccentBrush}"/>
+    </Grid>
+</Window>

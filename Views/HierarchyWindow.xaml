@@ -7,7 +7,15 @@
         mc:Ignorable="d"
         Title="Issue Hierarchy" Height="700" Width="1000"
         WindowStartupLocation="CenterScreen"
-        Background="#0F111A" Foreground="White">
+        Background="#0F111A" Foreground="White"
+        WindowStyle="None" AllowsTransparency="False">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" 
+                      ResizeBorderThickness="5" 
+                      GlassFrameThickness="0" 
+                      CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
     <Window.Resources>
         <Style x:Key="NodeStyle" TargetType="Border">
             <Setter Property="Background" Value="#1A1D2E"/>
@@ -26,17 +34,30 @@
         </Grid.RowDefinitions>
         
         <!-- Header -->
-        <Border Background="#161B22" Padding="20,15" BorderBrush="#30363D" BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Background="#141724" Height="32" BorderBrush="#30363D" BorderThickness="0,0,0,1">
             <Grid>
-                <StackPanel Orientation="Horizontal">
-                    <iconPacks:PackIconMaterial Kind="Sitemap" Width="20" Height="20" Foreground="#7C4DFF" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock Text="GRAPHIC HIERARCHY" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="SubtitleText" Text=" - Root View" FontSize="14" Foreground="#8B949E" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                    <iconPacks:PackIconMaterial Kind="Sitemap" Width="16" Height="16" Foreground="#7C4DFF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="GRAPHIC HIERARCHY" VerticalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="SubtitleText" Text=" - Root View" VerticalAlignment="Center" FontSize="11" Foreground="#8B949E" Margin="5,0,0,0"/>
                 </StackPanel>
-                
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Reset Zoom" Click="ResetZoom_Click" Style="{StaticResource SidebarButton}" Margin="0,0,10,0"/>
-                    <Button Content="Close" Click="Close_Click" Style="{StaticResource SidebarButton}"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="RESET ZOOM" Click="ResetZoom_Click" 
+                            Background="#2A2F45" Foreground="White" BorderThickness="0"
+                            Padding="12,2" FontSize="9" FontWeight="Bold" Height="22"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="—" Style="{StaticResource WindowControlButton}" Click="Minimize_Click"/>
+                    <Button Content="▢" Style="{StaticResource WindowControlButton}" Click="Maximize_Click"/>
+                    <Button Content="✕" Style="{StaticResource WindowCloseButton}" Click="Close_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

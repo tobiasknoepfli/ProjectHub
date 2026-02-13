@@ -510,6 +510,7 @@ namespace Sleipnir.App.ViewModels
             JumpToIssueCommand = new RelayCommand<object>(JumpToIssue);
             ArchiveIssueCommand = new AsyncRelayCommand<Issue>(ArchiveIssueAsync);
             OpenUserPermissionsCommand = new RelayCommand<AppUser>(OpenUserPermissions);
+            ShowSprintTimelineCommand = new RelayCommand<Sprint>(ShowSprintTimeline);
         }
 
         public IAsyncRelayCommand LoadDataCommand { get; }
@@ -539,6 +540,7 @@ namespace Sleipnir.App.ViewModels
 
         public IRelayCommand<Issue> SetPlannedIssueCommand { get; }
         public IRelayCommand<Issue> ShowHierarchyCommand { get; }
+        public IRelayCommand<Sprint> ShowSprintTimelineCommand { get; }
 
         public IAsyncRelayCommand<Issue> AddStoryCommand { get; }
         public IAsyncRelayCommand<Issue> AddChildIssueCommand { get; }
@@ -1590,6 +1592,14 @@ namespace Sleipnir.App.ViewModels
         {
             if (issue == null) return;
             var window = new HierarchyWindow(issue, _allProjectIssues);
+            window.Owner = Application.Current.MainWindow;
+            window.Show();
+        }
+
+        private void ShowSprintTimeline(Sprint? sprint)
+        {
+            if (sprint == null) return;
+            var window = new Sleipnir.App.Views.SprintTimelineWindow(sprint, _allProjectIssues, _dataService);
             window.Owner = Application.Current.MainWindow;
             window.Show();
         }
